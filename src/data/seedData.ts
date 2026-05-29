@@ -1,0 +1,317 @@
+import { Cliente, Vehiculo, Repuesto, OrdenTrabajo, Trabajador } from '../types';
+
+export const INITIAL_CLIENTES: Cliente[] = [
+  {
+    id: 'CLI-A1B2',
+    nombre: 'Carlos Eduardo Mendoza',
+    telefono: '0414-123-4567',
+    email: 'carlos.mendoza@email.com',
+    cedula: 'V-15.342.198',
+    nacimiento: '1982-04-12',
+    direccion: 'Av. Libertador, Edif. Altamira, Apto 4B, Caracas',
+    observaciones: 'Cliente frecuente. Prefiere comunicarse por WhatsApp.',
+    fechaReg: '2025-01-10',
+  },
+  {
+    id: 'CLI-C3D4',
+    nombre: 'María Gabriela Rodríguez',
+    telefono: '0424-987-6543',
+    email: 'maria.gaby@email.com',
+    cedula: 'V-18.765.432',
+    nacimiento: '1989-08-22',
+    direccion: 'La Tahona, Calle Los Pinos, Qta. Bella Vista',
+    observaciones: 'Consultar siempre presupuesto antes de iniciar labor.',
+    fechaReg: '2025-02-14',
+  },
+  {
+    id: 'CLI-E5F6',
+    nombre: 'Juan Bautista Pérez',
+    telefono: '0412-555-0199',
+    email: 'juan.perez@email.com',
+    cedula: 'V-12.980.345',
+    nacimiento: '1975-11-30',
+    direccion: 'Los Dos Caminos, Av. Sucre, Sec. Los Chorros',
+    observaciones: 'Usa su camión para reparto comercial diario.',
+    fechaReg: '2025-03-01',
+  }
+];
+
+export const INITIAL_VEHICULOS: Vehiculo[] = [
+  {
+    id: 'VEH-AA11',
+    clienteId: 'CLI-A1B2',
+    marca: 'Toyota',
+    modelo: 'Corolla Delta XLI',
+    anio: 2018,
+    placa: 'AB123CD',
+    color: '#6b7280', // Gris
+    vin: '93HDD92810JS83749',
+    km: 112500,
+    observaciones: 'Mantener control estricto de consumo de refrigerante.',
+    fechaReg: '2025-01-10',
+  },
+  {
+    id: 'VEH-BB22',
+    clienteId: 'CLI-C3D4',
+    marca: 'Ford',
+    modelo: 'Explorer Limited 4WD',
+    anio: 2016,
+    placa: 'XY987ZZ',
+    color: '#000000', // Negro
+    vin: '1FM5K8D84GGD29103',
+    km: 145210,
+    observaciones: 'Detalle menor en amortiguador delantero izquierdo.',
+    fechaReg: '2025-02-14',
+  },
+  {
+    id: 'VEH-CC33',
+    clienteId: 'CLI-E5F6',
+    marca: 'Chevrolet',
+    modelo: 'Silverado LTZ Doble Cabina',
+    anio: 2015,
+    placa: 'MK456AA',
+    color: '#ffffff', // Blanco
+    vin: '1GC1KVE26FZA98471',
+    km: 210850,
+    observaciones: 'Vehículo de carga pesada. Requiere revisión de frenos periódica.',
+    fechaReg: '2025-03-01',
+  }
+];
+
+export const INITIAL_REPUESTOS: Repuesto[] = [
+  {
+    id: 'REP-0001',
+    codigo: 'REP-0001',
+    nombre: 'Filtro de Aceite Toyota Orland',
+    referencia: '90915-YZZN1',
+    categoria: 'Filtros',
+    proveedor: 'Distribuidora Automotriz Caracas',
+    cantidad: 15,
+    stockMin: 5,
+    precio: 12.50,
+    ubicacion: 'Estante A-4',
+    fechaIngreso: '2025-01-05',
+  },
+  {
+    id: 'REP-0002',
+    codigo: 'REP-0002',
+    nombre: 'Aceite Motor Sintético 15W-40 Galón',
+    referencia: 'Mobil-1 15W40',
+    categoria: 'Lubricantes',
+    proveedor: 'Lubricentro del Centro',
+    cantidad: 8,
+    stockMin: 3,
+    precio: 45.00,
+    ubicacion: 'Pasillo General - Estante 1',
+    fechaIngreso: '2025-01-05',
+  },
+  {
+    id: 'REP-0003',
+    codigo: 'REP-0003',
+    nombre: 'Pastillas de Freno Delanteras Ford Explorer',
+    referencia: 'FR3Z-2001-A',
+    categoria: 'Frenos',
+    proveedor: 'Repuestos Ford El Globo',
+    cantidad: 4,
+    stockMin: 2,
+    precio: 85.00,
+    ubicacion: 'Estante B-2',
+    fechaIngreso: '2025-02-10',
+  },
+  {
+    id: 'REP-0004',
+    codigo: 'REP-0004',
+    nombre: 'Bujías de Iridio Motorcraft (Set de 6)',
+    referencia: 'SP-543-SP543',
+    categoria: 'Motor',
+    proveedor: 'Ignición Express Vzla',
+    cantidad: 6,
+    stockMin: 2,
+    precio: 60.00,
+    ubicacion: 'Estante C-1',
+    fechaIngreso: '2025-02-12',
+  },
+  {
+    id: 'REP-0005',
+    codigo: 'REP-0005',
+    nombre: 'Empacadura Cámara de Compresión Corolla',
+    referencia: '11115-22090',
+    categoria: 'Motor',
+    proveedor: 'Juntas Especiales S.A.',
+    cantidad: 2,
+    stockMin: 1,
+    precio: 35.00,
+    ubicacion: 'Gabinete Colgante D',
+    fechaIngreso: '2025-01-15',
+  },
+  {
+    id: 'REP-0006',
+    codigo: 'REP-0006',
+    nombre: 'Filtro de Aire Cabina Chevrolet',
+    referencia: 'CF11182',
+    categoria: 'Filtros',
+    proveedor: 'Filtros Industriales Oriente',
+    cantidad: 12,
+    stockMin: 4,
+    precio: 18.00,
+    ubicacion: 'Estante A-1',
+    fechaIngreso: '2025-03-02',
+  },
+  {
+    id: 'REP-0007',
+    codigo: 'REP-0007',
+    nombre: 'Amortiguador Delantero Completo Explorer',
+    referencia: 'ASH-24606',
+    categoria: 'Suspensión',
+    proveedor: 'Distribuidora Shocks C.A.',
+    cantidad: 2,
+    stockMin: 2,
+    precio: 150.00,
+    ubicacion: 'Palet Suelo 3',
+    fechaIngreso: '2025-02-15',
+  },
+  {
+    id: 'REP-0008',
+    codigo: 'REP-0008',
+    nombre: 'Pastillas de Freno Chevrolet Silverado HD',
+    referencia: 'D1411-8521',
+    categoria: 'Frenos',
+    proveedor: 'Distribuidora Automotriz Caracas',
+    cantidad: 5,
+    stockMin: 2,
+    precio: 110.00,
+    ubicacion: 'Estante B-3',
+    fechaIngreso: '2025-03-05',
+  }
+];
+
+export const INITIAL_ORDENES: OrdenTrabajo[] = [
+  {
+    id: 'ORD-9A1C',
+    clienteId: 'CLI-A1B2',
+    autoId: 'VEH-AA11',
+    fecha: '2025-01-20',
+    descripcion: 'Mantenimiento preventivo básico. Cambio de aceite de motor y filtro de aceite. Revisión de niveles de fluidos de freno y dirección, ajuste de presión de neumáticos.',
+    repuestos: [
+      { id: 'REP-0001', nombre: 'Filtro de Aceite Toyota Orland', qty: 1, precio: 12.50 },
+      { id: 'REP-0002', nombre: 'Aceite Motor Sintético 15W-40 Galón', qty: 1, precio: 45.00 }
+    ],
+    observaciones: 'El motor presenta un funcionamiento óptimo. Se recomienda realizar el próximo cambio en 5,000 km (117,500 km actuales).',
+    laborCost: 25.00,
+    kmIngreso: 112500,
+    estado: 'terminada',
+    creadoEn: '2025-01-20T09:00:00Z',
+    trabajadorId: 'TRA-001'
+  },
+  {
+    id: 'ORD-5X2Y',
+    clienteId: 'CLI-C3D4',
+    autoId: 'VEH-BB22',
+    fecha: '2025-02-18',
+    descripcion: 'Reemplazo completo de pastillas de frenos delanteras. Rectificación de discos delanteros para remover surcos menores. Cambio de amortiguador delantero izquierdo agrietado por fatiga de material.',
+    repuestos: [
+      { id: 'REP-0003', nombre: 'Pastillas de Freno Delanteras Ford Explorer', qty: 1, precio: 85.00 },
+      { id: 'REP-0007', nombre: 'Amortiguador Delantero Completo Explorer', qty: 1, precio: 150.00 }
+    ],
+    observaciones: 'Se rectificaron exitosamente los discos instalados. Prueba de carretera positiva; frenado silencioso y suspensión delantera izquierda completamente restaurada y firme.',
+    laborCost: 110.00,
+    kmIngreso: 145210,
+    estado: 'terminada',
+    creadoEn: '2025-02-18T08:30:00Z',
+    trabajadorId: 'TRA-003'
+  },
+  {
+    id: 'ORD-1K3Z',
+    clienteId: 'CLI-E5F6',
+    autoId: 'VEH-CC33',
+    fecha: '2025-03-05',
+    descripcion: 'Cambio de pastillas de freno de las ruedas traseras. Limpieza general del sistema de frenado, lubricación de pasadores de pinzas y purgado de circuito de líquido hidráulico.',
+    repuestos: [
+      { id: 'REP-0008', nombre: 'Pastillas de Freno Chevrolet Silverado HD', qty: 1, precio: 110.00 }
+    ],
+    observaciones: 'Se detecta leve desgaste en cauchos delanteros debido a balanceo deficiente, el cliente solicita agendar alineación para más adelante.',
+    laborCost: 45.00,
+    kmIngreso: 210850,
+    estado: 'terminada',
+    creadoEn: '2025-03-05T11:45:00Z',
+    trabajadorId: 'TRA-001'
+  },
+  {
+    id: 'ORD-4P9W',
+    clienteId: 'CLI-C3D4',
+    autoId: 'VEH-BB22',
+    fecha: '2025-05-18',
+    descripcion: 'Pérdida de fuerza en subidas y ralentí inestable. Diagnóstico computarizado OBD2 reveals códigos de error en cilindros 2 y 4 (Misfire). Se procede a reemplazar juegos de bujías de iridio desgastadas y limpieza eléctrica de bobinas.',
+    repuestos: [
+      { id: 'REP-0004', nombre: 'Bujías de Iridio Motorcraft (Set de 6)', qty: 1, precio: 60.00 }
+    ],
+    observaciones: 'El fallo de encendido ha desaparecido por completo tras la sustitución de las bujías obsoletas. Ralentí estable en 750 RPM.',
+    laborCost: 65.00,
+    kmIngreso: 149300,
+    estado: 'terminada',
+    creadoEn: '2025-05-18T10:15:00Z',
+    trabajadorId: 'TRA-002'
+  },
+  {
+    id: 'ORD-7Q5P',
+    clienteId: 'CLI-A1B2',
+    autoId: 'VEH-AA11',
+    fecha: '2026-05-15',
+    descripcion: 'Arranque defectuoso en frío y pérdida moderada de refrigerante por la parte superior del radiador. Se realiza diagnóstico del termostato y mangueras secundarias del motor. Cambio de empaque superior termostato.',
+    repuestos: [],
+    observaciones: 'Fallo corregido. Manguera superior reemplazada. Presurización de circuito correcta.',
+    laborCost: 35.00,
+    kmIngreso: 115400,
+    estado: 'terminada',
+    creadoEn: '2026-05-15T10:15:00Z',
+    trabajadorId: 'TRA-001'
+  },
+  {
+    id: 'ORD-M9W1',
+    clienteId: 'CLI-E5F6',
+    autoId: 'VEH-CC33',
+    fecha: '2026-05-20',
+    descripcion: 'Mantenimiento mayor de motor y transmisión sincrónica. Reemplazo del kit de embrague (croche) y rectificación del volante motor. Lubricación completa.',
+    repuestos: [],
+    observaciones: 'Prueba de embrague suave, velocidades entran con precisión y sin trepidación.',
+    laborCost: 150.00,
+    kmIngreso: 211000,
+    estado: 'terminada',
+    creadoEn: '2026-05-20T08:00:00Z',
+    trabajadorId: 'TRA-001'
+  },
+  {
+    id: 'ORD-O2B7',
+    clienteId: 'CLI-C3D4',
+    autoId: 'VEH-BB22',
+    fecha: '2026-05-22',
+    descripcion: 'Falla total de carga e iluminación. Diagnóstico del sistema eléctrico integral. Reparación y reconstrucción de puente de diodos y carbones del alternador, cambio de terminales sulfatados.',
+    repuestos: [],
+    observaciones: 'El alternador ahora genera 14.1V estables con carga full encendida. Sistema eléctrico restaurado.',
+    laborCost: 95.00,
+    kmIngreso: 149500,
+    estado: 'terminada',
+    creadoEn: '2026-05-22T09:30:00Z',
+    trabajadorId: 'TRA-002'
+  },
+  {
+    id: 'ORD-P88R',
+    clienteId: 'CLI-A1B2',
+    autoId: 'VEH-AA11',
+    fecha: '2026-05-23',
+    descripcion: 'Alineación computarizada avanzada del tren delantero, balanceo dinámico de las 4 ruedas del Corolla y reemplazo preventivo de muñones y terminales izquierdos.',
+    repuestos: [],
+    observaciones: 'Dirección centrada, se removieron ruidos en curvas cerradas. Manejo impecable.',
+    laborCost: 80.00,
+    kmIngreso: 116200,
+    estado: 'terminada',
+    creadoEn: '2026-05-23T11:00:00Z',
+    trabajadorId: 'TRA-003'
+  }
+];
+
+export const INITIAL_TRABAJADORES: Trabajador[] = [
+  { id: 'TRA-001', nombre: 'José Manuel Garrido', especialidad: 'Mecánica General', telefono: '0412-111-2233', fechaIngreso: '2024-05-15' },
+  { id: 'TRA-002', nombre: 'Franklin Ostos', especialidad: 'Sistemas Eléctricos', telefono: '0424-222-3344', fechaIngreso: '2024-08-20' },
+  { id: 'TRA-003', nombre: 'Douglas Pernía', especialidad: 'Alineación y Balanceo', telefono: '0414-333-4455', fechaIngreso: '2025-01-10' }
+];

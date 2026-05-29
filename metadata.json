@@ -1,0 +1,6 @@
+{
+  "name": "Castellanos Motors",
+  "description": "Sistema de gestión y búsqueda de historial de mantenimiento de vehículos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

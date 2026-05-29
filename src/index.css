@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer utilities {
+  .grid-pattern {
+    background-image: radial-gradient(#94a3b8 1px, transparent 1.5px);
+    background-size: 20px 20px;
+  }
+}
