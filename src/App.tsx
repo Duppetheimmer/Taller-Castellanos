@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Menu, Bell, Check, ShoppingBag, Send } from 'lucide-react';
-import { Cliente, Vehiculo, Repuesto, OrdenTrabajo, RepuestoUtilizado, Trabajador, SolicitudRepuesto } from './types';
+import { Cliente, Vehiculo, Repuesto, OrdenTrabajo, RepuestoUtilizado, Trabajador, SolicitudRepuesto, VentaIndividual } from './types';
 import {
   INITIAL_CLIENTES,
   INITIAL_VEHICULOS,
@@ -9,6 +9,7 @@ import {
   INITIAL_TRABAJADORES
 } from './data/seedData';
 import TrabajadoresView from './components/TrabajadoresView';
+import VentasView from './components/VentasView';
 
 // Subcomponents imports
 import Sidebar from './components/Sidebar';
@@ -45,6 +46,9 @@ import {
   getSolicitudesDB,
   upsertSolicitudDB,
   deleteSolicitudDB,
+  getVentasDB,
+  upsertVentaDB,
+  deleteVentaDB,
   seedSupabaseCloud
 } from './lib/supabase';
 
@@ -101,6 +105,7 @@ export default function App() {
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [repuestos, setRepuestos] = useState<Repuesto[]>([]);
   const [ordenes, setOrdenes] = useState<OrdenTrabajo[]>([]);
+  const [ventas, setVentas] = useState<VentaIndividual[]>([]);
 
   // --- ROLES & TECHNICAL PERSONAL WORKFLOW STATE ---
   const [userRole, setUserRole] = useState<'administrador' | 'recepcionista' | 'trabajador'>(() => {
@@ -193,6 +198,7 @@ export default function App() {
       let localOrdenes: OrdenTrabajo[] = [];
       let localTrabajadores: Trabajador[] = [];
       let localSolicitudes: SolicitudRepuesto[] = [];
+      let localVentas: VentaIndividual[] = [];
 
       try {
         const saved = localStorage.getItem('castellanos_motors_state_v1');
@@ -204,6 +210,7 @@ export default function App() {
           localOrdenes = parsed.ordenes || [];
           localTrabajadores = parsed.trabajadores || [];
           localSolicitudes = parsed.solicitudes || [];
+          localVentas = parsed.ventas || [];
         }
       } catch (e) {
         console.error('Error al parsear el estado caché de localStorage:', e);
@@ -215,6 +222,7 @@ export default function App() {
       setOrdenes(localOrdenes);
       setTrabajadores(localTrabajadores);
       setSolicitudes(localSolicitudes);
+      setVentas(localVentas);
 
       // 3. Dual sync: If Supabase has successful tables, retrieve and consolidate data directly from Cloud!
       if (status.connected && status.tablesOk) {
@@ -226,6 +234,7 @@ export default function App() {
           
           let dbTrabajadores: Trabajador[] = [];
           let dbSolicitudes: SolicitudRepuesto[] = [];
+          let dbVentas: VentaIndividual[] = [];
           
           try {
             dbTrabajadores = await getTrabajadoresDB();
@@ -241,12 +250,20 @@ export default function App() {
             dbSolicitudes = localSolicitudes;
           }
 
+          try {
+            dbVentas = await getVentasDB();
+          } catch (ve) {
+            console.warn('La tabla de ventas_individuales probablemente aún no ha sido creada o está vacía en Supabase.', ve);
+            dbVentas = localVentas;
+          }
+
           setClientes(dbClientes);
           setVehiculos(dbVehiculos);
           setRepuestos(dbRepuestos);
           setOrdenes(dbOrdenes);
           setTrabajadores(dbTrabajadores);
           setSolicitudes(dbSolicitudes);
+          setVentas(dbVentas);
 
           localStorage.setItem(
             'castellanos_motors_state_v1',
@@ -256,7 +273,8 @@ export default function App() {
               repuestos: dbRepuestos,
               ordenes: dbOrdenes,
               trabajadores: dbTrabajadores,
-              solicitudes: dbSolicitudes
+              solicitudes: dbSolicitudes,
+              ventas: dbVentas
             })
           );
         } catch (dbErr) {
@@ -339,7 +357,8 @@ export default function App() {
     rList: Repuesto[],
     oList: OrdenTrabajo[],
     wList: Trabajador[] = trabajadores,
-    sList: SolicitudRepuesto[] = solicitudes
+    sList: SolicitudRepuesto[] = solicitudes,
+    vtList: VentaIndividual[] = ventas
   ) => {
     try {
       localStorage.setItem(
@@ -350,7 +369,8 @@ export default function App() {
           repuestos: rList,
           ordenes: oList,
           trabajadores: wList,
-          solicitudes: sList
+          solicitudes: sList,
+          ventas: vtList
         })
       );
     } catch (e) {
@@ -673,6 +693,58 @@ export default function App() {
     if (supabaseStatus.connected && supabaseStatus.tablesOk) {
       deleteOrdenDB(id).catch(err => {
         console.error('Supabase order delete sync error:', err);
+      });
+    }
+  };
+
+  const handleSaveVenta = (newSale: VentaIndividual) => {
+    // 1. Update sales list
+    const updatedSales = [newSale, ...ventas];
+    setVentas(updatedSales);
+
+    // 2. Decrement stock for sold parts
+    const updatedRepuestos = repuestos.map(part => {
+      const soldItem = newSale.items.find(i => i.repuestoId === part.id);
+      if (soldItem) {
+        return {
+          ...part,
+          cantidad: Math.max(0, part.cantidad - soldItem.cantidad)
+        };
+      }
+      return part;
+    });
+    setRepuestos(updatedRepuestos);
+
+    // 3. Save to Local Storage
+    saveStateToLocalStorage(clientes, vehiculos, updatedRepuestos, ordenes, trabajadores, solicitudes, updatedSales);
+
+    // 4. Sync to DB
+    if (supabaseStatus.connected && supabaseStatus.tablesOk) {
+      // Upsert the sale
+      upsertVentaDB(newSale).catch(err => {
+        console.error('Supabase sale insert error:', err);
+      });
+
+      // Upsert any repuestos whose stock changed
+      newSale.items.forEach(item => {
+        const matchingPart = updatedRepuestos.find(r => r.id === item.repuestoId);
+        if (matchingPart) {
+          upsertRepuestoDB(matchingPart).catch(err => {
+            console.error('Supabase parts stock decrement error:', err);
+          });
+        }
+      });
+    }
+  };
+
+  const handleDeleteVenta = (id: string) => {
+    const updatedSales = ventas.filter(v => v.id !== id);
+    setVentas(updatedSales);
+    saveStateToLocalStorage(clientes, vehiculos, repuestos, ordenes, trabajadores, solicitudes, updatedSales);
+
+    if (supabaseStatus.connected && supabaseStatus.tablesOk) {
+      deleteVentaDB(id).catch(err => {
+        console.error('Supabase sale delete error:', err);
       });
     }
   };
@@ -1160,6 +1232,17 @@ export default function App() {
                 setActiveWorkerId(id);
                 localStorage.setItem('castellanos_activeWorkerId', id);
               }}
+            />
+          )}
+
+          {currentView === 'ventas' && userRole !== 'trabajador' && (
+            <VentasView
+              ventas={ventas}
+              repuestos={repuestos}
+              onAddVenta={handleSaveVenta}
+              onDeleteVenta={handleDeleteVenta}
+              isAdmin={isAdmin}
+              onTriggerAdminLogin={() => setShowAdminLoginModal(true)}
             />
           )}
 

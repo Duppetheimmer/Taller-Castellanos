@@ -82,3 +82,24 @@ export interface SolicitudRepuesto {
   creadoEn: string;
 }
 
+export interface VentaItem {
+  repuestoId: string;
+  nombre: string;
+  codigo: string;
+  cantidad: number;
+  precioUnitario: number;
+  precioOriginal?: number;
+}
+
+export interface VentaIndividual {
+  id: string;
+  fecha: string;
+  clienteNombre: string;
+  clienteCedula: string;
+  items: VentaItem[];
+  tasaUsdt: number;
+  totalUsd: number;
+  creadoEn: string;
+}
+
+

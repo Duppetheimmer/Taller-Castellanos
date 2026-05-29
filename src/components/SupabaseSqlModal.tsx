@@ -107,6 +107,19 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- 7. Tabla: Ventas Individuales (Facturación por venta individual de repuestos)
+CREATE TABLE IF NOT EXISTS ventas_individuales (
+    id TEXT PRIMARY KEY,
+    fecha TEXT NOT NULL,
+    cliente_nombre TEXT NOT NULL,
+    cliente_cedula TEXT,
+    items JSONB NOT NULL DEFAULT '[]'::jsonb,
+    tasa_usdt NUMERIC(15, 4) NOT NULL DEFAULT 44.50,
+    total_usd NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
+    creado_en TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
 -- MIGRACIÓN IMPORTANTE: Asegurar que las columnas existan en la tabla ordenes (por si las tablas ya estaban creadas de antes)
 ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS trabajador_id TEXT;
 ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS diagnostico TEXT;
@@ -119,6 +132,7 @@ ALTER TABLE repuestos DISABLE ROW LEVEL SECURITY;
 ALTER TABLE ordenes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE trabajadores DISABLE ROW LEVEL SECURITY;
 ALTER TABLE solicitudes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE ventas_individuales DISABLE ROW LEVEL SECURITY;
 
 -- 7. Insertar Datos de Semilla de Ejemplo (Iniciales de Almacén)
 -- Evita errores iniciales insertando datos de prueba que el sistema puede leer de inmediato.

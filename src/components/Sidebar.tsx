@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Car, Wrench, Package, Search, Lock, Unlock, Key, LogOut, Database, Terminal, X, UserX, User } from 'lucide-react';
+import { LayoutDashboard, Users, Car, Wrench, Package, Search, Lock, Unlock, Key, LogOut, Database, Terminal, X, UserX, User, ShoppingBag } from 'lucide-react';
 
 interface SidebarProps {
   currentView: string;
@@ -232,17 +232,30 @@ export default function Sidebar({
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-3.5 block mb-1.5 font-mono">
               Suministros
             </span>
-            <button
-              onClick={() => handleSetView('inventario')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all ${
-                currentView === 'inventario'
-                  ? 'bg-slate-800 text-blue-400 border-l-4 border-blue-500 px-2'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <Package className="w-3.5 h-3.5 text-blue-500" />
-              Inventario & Almacén
-            </button>
+            <div className="space-y-0.5">
+              <button
+                onClick={() => handleSetView('inventario')}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all ${
+                  currentView === 'inventario'
+                    ? 'bg-slate-800 text-blue-400 border-l-4 border-blue-500 px-2'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <Package className="w-3.5 h-3.5 text-blue-500" />
+                Inventario & Almacén
+              </button>
+              <button
+                onClick={() => handleSetView('ventas')}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all ${
+                  currentView === 'ventas'
+                    ? 'bg-slate-800 text-blue-400 border-l-4 border-blue-500 px-2'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-blue-500" />
+                Venta de Repuestos
+              </button>
+            </div>
           </div>
         )}
 
