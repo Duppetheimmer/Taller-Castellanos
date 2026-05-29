@@ -363,35 +363,25 @@ export async function seedSupabaseCloud(
 
 /* 7. Ventas Individuales de Repuestos */
 export async function getVentasDB(): Promise<VentaIndividual[]> {
-  try {
-    const { data, error } = await supabase
-      .from('ventas_individuales')
-      .select('*')
-      .order('creado_en', { ascending: false });
-    
-    if (error) {
-      // If table doesn't exist yet, return an empty array and don't throw to avoid crashing
-      if (error.code === 'PGRST116' || error.message.includes('relation "ventas_individuales" does not exist')) {
-        console.warn('La tabla "ventas_individuales" no existe en Supabase de momento.');
-        return [];
-      }
-      throw error;
-    }
-
-    return (data || []).map((v: any) => ({
-      id: v.id,
-      fecha: v.fecha,
-      clienteNombre: v.cliente_nombre || 'Cliente General',
-      clienteCedula: v.cliente_cedula || '',
-      items: Array.isArray(v.items) ? v.items : [],
-      tasaUsdt: Number(v.tasa_usdt || 44.50),
-      totalUsd: Number(v.total_usd || 0.00),
-      creadoEn: v.creado_en
-    }));
-  } catch (err) {
-    console.error('getVentasDB Exception:', err);
-    return [];
+  const { data, error } = await supabase
+    .from('ventas_individuales')
+    .select('*')
+    .order('creado_en', { ascending: false });
+  
+  if (error) {
+    throw error;
   }
+
+  return (data || []).map((v: any) => ({
+    id: v.id,
+    fecha: v.fecha,
+    clienteNombre: v.cliente_nombre || 'Cliente General',
+    clienteCedula: v.cliente_cedula || '',
+    items: Array.isArray(v.items) ? v.items : [],
+    tasaUsdt: Number(v.tasa_usdt || 44.50),
+    totalUsd: Number(v.total_usd || 0.00),
+    creadoEn: v.creado_en
+  }));
 }
 
 export async function upsertVentaDB(v: VentaIndividual): Promise<void> {

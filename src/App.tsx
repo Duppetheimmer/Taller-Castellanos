@@ -749,6 +749,49 @@ export default function App() {
     }
   };
 
+  const handleCancelAndRestockVenta = (id: string) => {
+    const saleToCancel = ventas.find(v => v.id === id);
+    if (!saleToCancel) return;
+
+    // 1. Calculate restored stock for each repuesto in the sale
+    const updatedRepuestos = repuestos.map(part => {
+      const soldItem = saleToCancel.items.find(i => i.repuestoId === part.id);
+      if (soldItem) {
+        return {
+          ...part,
+          cantidad: part.cantidad + soldItem.cantidad
+        };
+      }
+      return part;
+    });
+    setRepuestos(updatedRepuestos);
+
+    // 2. Remove from sales list
+    const updatedSales = ventas.filter(v => v.id !== id);
+    setVentas(updatedSales);
+
+    // 3. Save to Local Storage
+    saveStateToLocalStorage(clientes, vehiculos, updatedRepuestos, ordenes, trabajadores, solicitudes, updatedSales);
+
+    // 4. Sync to DB
+    if (supabaseStatus.connected && supabaseStatus.tablesOk) {
+      // Delete the sale from the cloud
+      deleteVentaDB(id).catch(err => {
+        console.error('Supabase sale delete error:', err);
+      });
+
+      // Increment parts stock back in the cloud
+      saleToCancel.items.forEach(item => {
+        const matchingPart = updatedRepuestos.find(r => r.id === item.repuestoId);
+        if (matchingPart) {
+          upsertRepuestoDB(matchingPart).catch(err => {
+            console.error('Supabase parts stock increment error:', err);
+          });
+        }
+      });
+    }
+  };
+
   // Switch routing seamlessly into vehicle search lookup
   const triggerQuickSearchHistoryNavigation = () => {
     setView('autos');
@@ -1241,6 +1284,7 @@ export default function App() {
               repuestos={repuestos}
               onAddVenta={handleSaveVenta}
               onDeleteVenta={handleDeleteVenta}
+              onCancelAndRestockVenta={handleCancelAndRestockVenta}
               isAdmin={isAdmin}
               onTriggerAdminLogin={() => setShowAdminLoginModal(true)}
             />

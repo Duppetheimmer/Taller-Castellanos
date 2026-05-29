@@ -7,6 +7,7 @@ interface VentasViewProps {
   repuestos: Repuesto[];
   onAddVenta: (v: VentaIndividual) => void;
   onDeleteVenta: (id: string) => void;
+  onCancelAndRestockVenta: (id: string) => void;
   isAdmin: boolean;
   onTriggerAdminLogin: () => void;
 }
@@ -16,6 +17,7 @@ export default function VentasView({
   repuestos,
   onAddVenta,
   onDeleteVenta,
+  onCancelAndRestockVenta,
   isAdmin,
   onTriggerAdminLogin
 }: VentasViewProps) {
@@ -722,15 +724,33 @@ export default function VentasView({
                             <td className="p-4 text-center whitespace-nowrap gap-1.5 flex items-center justify-center">
                               <button
                                 onClick={() => handlePrintSaleTicket(v)}
-                                className="p-1.5 bg-slate-900 hover:bg-blue-600 hover:text-white text-slate-300 border border-slate-900 hover:border-blue-700 font-black cursor-pointer transition-all rounded-none block"
+                                className="px-2 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-900 font-sans font-bold text-[10px] cursor-pointer transition-all rounded-none flex items-center gap-1 uppercase"
                                 title="Volver a Imprimir recibo de Venta"
                               >
-                                <Printer className="w-3.5 h-3.5" />
+                                <Printer className="w-3 h-3" />
+                                <span>Ticket</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (!isAdmin) {
+                                    alert('Se requieren credenciales de Administrador para registrar devoluciones y reabastecer el inventario.');
+                                    onTriggerAdminLogin();
+                                    return;
+                                  }
+                                  if (confirm(`¿Proceder con la DEVOLUCIÓN de la venta ${v.id}?\n\n- Se eliminará este registro de facturación.\n- Se devolverán todas las piezas de repuestos de esta venta de vuelta al stock de inventario.`)) {
+                                    onCancelAndRestockVenta(v.id);
+                                  }
+                                }}
+                                className="px-2 py-1.5 bg-amber-50 hover:bg-amber-600 hover:text-white border border-slate-900 text-amber-800 font-sans font-bold text-[10px] cursor-pointer transition-all rounded-none flex items-center gap-1 uppercase"
+                                title="Cancelar Venta y Devolver Repuestos al Inventario"
+                              >
+                                <RefreshCw className="w-3 h-3" />
+                                <span>Devolución</span>
                               </button>
                               <button
                                 onClick={() => handleDeleteClick(v.id)}
                                 className="p-1.5 bg-red-50 hover:bg-red-500 hover:text-white border border-slate-900 text-red-650 rounded-none cursor-pointer transition-all block"
-                                title="Eliminar este recibo"
+                                title="Eliminar este recibo sin devolver stock"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
