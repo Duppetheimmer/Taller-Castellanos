@@ -164,14 +164,19 @@ export function VehiculoModal({ vehiculo, clientes, onSave, onClose }: VehiculoM
     { name: 'Negro', hex: '#000000' },
     { name: 'Blanco', hex: '#ffffff' },
     { name: 'Gris Plata', hex: '#6b7280' },
+    { name: 'Gris Plomo', hex: '#374151' },
+    { name: 'Vinotinto', hex: '#800020' },
     { name: 'Rojo', hex: '#ef4444' },
     { name: 'Naranja', hex: '#f97316' },
     { name: 'Amarillo', hex: '#eab308' },
     { name: 'Verde', hex: '#22c55e' },
     { name: 'Azul', hex: '#3b82f6' },
+    { name: 'Azul Marino', hex: '#1e3a8a' },
     { name: 'Morado', hex: '#8b5cf6' },
     { name: 'Marrón', hex: '#92400e' },
   ];
+
+  const isPreset = availableColors.some(c => c.hex.toLowerCase() === color.toLowerCase());
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -272,16 +277,38 @@ export function VehiculoModal({ vehiculo, clientes, onSave, onClose }: VehiculoM
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Color Pintura</label>
               <select
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
+                value={isPreset ? color : 'otro'}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'otro') {
+                    setColor('');
+                  } else {
+                    setColor(val);
+                  }
+                }}
                 className="w-full bg-[#1e2436] border border-[#2d364f] focus:border-orange-500 rounded-lg py-2 px-3 text-xs text-white outline-none transition-all"
               >
                 {availableColors.map(c => (
                   <option key={c.hex} value={c.hex} style={{ backgroundColor: '#171b26' }}>{c.name}</option>
                 ))}
+                <option value="otro" style={{ backgroundColor: '#171b26' }}>Otro color / Personalizado...</option>
               </select>
             </div>
           </div>
+
+          {!isPreset && (
+            <div className="space-y-1 bg-[#1a2030] p-3.5 border border-[#2d364f] rounded-xl animate-in fade-in slide-in-from-top-1 duration-150">
+              <label className="text-xs font-bold text-orange-400 uppercase tracking-widest block mb-1">Especifique el color personalizado</label>
+              <input
+                type="text"
+                required
+                placeholder="Ej: Verde Eléctrico, Vinotinto Perlado, Dorado..."
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-full bg-[#141926] border border-[#2d364f] focus:border-orange-500 rounded-lg py-2 px-3 text-xs text-white placeholder-gray-500 outline-none transition-all"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">

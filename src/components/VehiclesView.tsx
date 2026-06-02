@@ -36,12 +36,15 @@ export default function VehiclesView({
     const map: Record<string, string> = {
       '#000000': 'Negro',
       '#ffffff': 'Blanco',
-      '#6b7280': 'Gris Metálico',
+      '#6b7280': 'Gris Plata',
+      '#374151': 'Gris Plomo',
+      '#800020': 'Vinotinto',
       '#ef4444': 'Rojo',
       '#f97316': 'Naranja',
       '#eab308': 'Amarillo',
       '#22c55e': 'Verde',
       '#3b82f6': 'Azul',
+      '#1e3a8a': 'Azul Marino',
       '#8b5cf6': 'Morado',
       '#92400e': 'Marrón / Café',
       '#ec4899': 'Rosado',
@@ -241,7 +244,7 @@ export default function VehiclesView({
 
         <div class="footer">
           <p>Castellanos Motors — Sistema de Registro Electrónico de Mantenimiento</p>
-          <p>La Paz, Caracas. Confianza certificada. Impreso el: ${new Date().toLocaleString()}</p>
+          <p>Barinas, Venezuela. Confianza certificada. Impreso el: ${new Date().toLocaleString()}</p>
         </div>
         <script>window.onload=function(){ window.print(); }<\/script>
       </body>
@@ -443,7 +446,7 @@ export default function VehiclesView({
                   <div>
                     <span className="text-slate-400 block font-bold text-[9px] font-mono leading-none mb-1">Esmalte / Color</span>
                     <span className="text-slate-900 font-bold flex items-center gap-1.5 mt-1">
-                      <span className="w-3.5 h-3.5 rounded-none border-2 border-slate-900 inline-block" style={{ backgroundColor: activeVehicle.color }} />
+                      <span className="w-3.5 h-3.5 rounded-none border-2 border-slate-900 inline-block" style={{ backgroundColor: activeVehicle.color.startsWith('#') ? activeVehicle.color : '#6b7280' }} />
                       {colorName(activeVehicle.color)}
                     </span>
                   </div>

@@ -30,6 +30,7 @@ export default function VentasView({
   // New Sale Form States
   const [clienteNombre, setClienteNombre] = useState('Cliente General');
   const [clienteCedula, setClienteCedula] = useState('');
+  const [selectedMetodoPago, setSelectedMetodoPago] = useState<'divisas' | 'bolivares'>('divisas');
   const [cartItems, setCartItems] = useState<VentaItem[]>([]);
   const [searchPartQuery, setSearchPartQuery] = useState('');
 
@@ -143,7 +144,8 @@ export default function VentasView({
       items: cartItems,
       tasaUsdt: tasaUSDT,
       totalUsd: totalUSD,
-      creadoEn: new Date().toISOString()
+      creadoEn: new Date().toISOString(),
+      metodoPago: selectedMetodoPago
     };
 
     onAddVenta(newSale);
@@ -157,6 +159,7 @@ export default function VentasView({
     setCartItems([]);
     setClienteNombre('Cliente General');
     setClienteCedula('');
+    setSelectedMetodoPago('divisas');
     setSearchPartQuery('');
     setActiveTab('historial');
   };
@@ -168,6 +171,11 @@ export default function VentasView({
       alert('Por favor permita o autorice las ventanas emergentes para mostrar el ticket de venta.');
       return;
     }
+
+    const totalOriginalUSD = v.items.reduce((sum, item) => sum + (item.precioOriginal !== undefined ? item.precioOriginal : item.precioUnitario) * item.cantidad, 0);
+    const savedUSD = totalOriginalUSD - v.totalUsd;
+    const isPrimaryDivisas = (v.metodoPago || 'divisas') === 'divisas';
+
     const itemsRows = v.items.map(item => {
       const orig = item.precioOriginal !== undefined ? item.precioOriginal : item.precioUnitario;
       const isDiscounted = orig > item.precioUnitario;
@@ -175,22 +183,28 @@ export default function VentasView({
       const origPriceBs = orig * v.tasaUsdt;
       const finalPriceBs = item.precioUnitario * v.tasaUsdt;
       const subtotalBs = item.precioUnitario * item.cantidad * v.tasaUsdt;
+      const subtotalUsd = item.precioUnitario * item.cantidad;
 
       const priceVesHtml = isDiscounted 
         ? `<span style="text-decoration: line-through; color: #777; margin-right: 4px;">Bs ${origPriceBs.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> <span style="font-weight: bold; color: #111;">Bs ${finalPriceBs.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`
         : `Bs ${finalPriceBs.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
       const priceUsdHtml = isDiscounted
-        ? `<span style="text-decoration: line-through; color: #777; margin-right: 4px;">$${orig.toFixed(2)}</span> <span style="font-weight: bold; color: #111; background: #eaeaea; padding: 0 4px;">$${item.precioUnitario.toFixed(2)}</span> <span style="color: #0055aa; font-weight: bold; font-size: 9px; margin-left: 2px;">(¡Oferta Especial!)</span>`
+        ? `<span style="text-decoration: line-through; color: #777; margin-right: 4px;">$${orig.toFixed(2)}</span> <span style="font-weight: bold; color: #111; background: #eaeaea; padding: 0 4px;">$${item.precioUnitario.toFixed(2)}</span> <span style="color: #27ae60; font-weight: bold; font-size: 9px; margin-left: 2px;">(¡Rebaja!)</span>`
         : `Unit: $${item.precioUnitario.toFixed(2)}`;
+
+      const primaryLineTotalText = isPrimaryDivisas
+        ? `$ ${subtotalUsd.toFixed(2)} USD`
+        : `Bs ${subtotalBs.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
       return `
         <div class="row" style="margin-top: 4px;">
-          <div class="desc bold">${item.nombre}</div>
-          <div class="qty-price">${item.cantidad} x ${priceVesHtml}</div>
-          <div class="subtotal bold">Bs ${subtotalBs.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="desc bold">⚙️ ${item.nombre} (x${item.cantidad})</div>
+          <div class="subtotal bold">${primaryLineTotalText}</div>
         </div>
-        <div class="row-usd font-mono" style="margin-bottom: 8px;">/ Código: ${item.codigo} | ${priceUsdHtml} • Total: $${(item.precioUnitario * item.cantidad).toFixed(2)}</div>
+        <div class="row-usd font-mono" style="margin-bottom: 8px; font-size: 10px; color: #555;">
+          / Código: ${item.codigo} | ${priceUsdHtml} | ${priceVesHtml}
+        </div>
       `;
     }).join('');
 
@@ -240,14 +254,15 @@ export default function VentasView({
         <div class="center">
           <div class="header-title">⚙️ CASTELLANOS MOTORS</div>
           <p class="sub">Venta Directa de Repuestos y Accesorios</p>
-          <p class="sub">Rif: J-40892813-0 | Caracas, Venezuela</p>
-          <p class="sub">Telf: 0414-123-4567</p>
+          <p class="sub">Rif: J-406610917 | Barinas, Venezuela</p>
+          <p class="sub">Telf: 0412 7735263</p>
         </div>
 
         <div class="id-box">COMPROBANTE VENTA: ${v.id}</div>
         
         <div class="row"><span class="lbl">Fecha Emisión:</span><span class="val">${v.fecha.split('-').reverse().join('/')}</span></div>
         <div class="row"><span class="lbl">Hora Proceso:</span><span class="val">${new Date(v.creadoEn).toLocaleTimeString('es-VE')}</span></div>
+        <div class="row"><span class="lbl">Forma de Pago:</span><span class="val" style="font-weight: bold; background: #e1f5fe; border: 1px solid #0288d1; padding: 1px 5px; border-radius: 2px; font-size: 10.5px; text-transform: uppercase;">${(v.metodoPago || 'divisas') === 'divisas' ? '💵 Divisas ($)' : '🇻🇪 Bolívares (Bs.)'}</span></div>
 
         <hr class="divider">
 
@@ -262,18 +277,36 @@ export default function VentasView({
 
         <hr class="divider">
 
-        <div class="row"><span class="lbl">Total Neto USD:</span><span class="val">$${v.totalUsd.toFixed(2)}</span></div>
-        <div class="row"><span class="lbl">Tasa Oficial Ref.:</span><span class="val">Bs ${v.tasaUsdt.toFixed(2)} USDT</span></div>
+        <div class="row">
+          <span class="lbl">Total Neto USD:</span>
+          <span class="val" style="font-weight: bold;">$ ${v.totalUsd.toFixed(2)} USD</span>
+        </div>
+        <div class="row">
+          <span class="lbl">Tasa Oficial Ref.:</span>
+          <span class="val">Bs ${v.tasaUsdt.toFixed(2)} USDT</span>
+        </div>
         
+        ${savedUSD > 0 ? `
+          <div class="row" style="color: #27ae60; font-weight: bold;">
+            <span class="lbl" style="color: #27ae60;">✨ Rebaja Aplicada (Ahorro):</span>
+            <span class="val" style="color: #27ae60;">${isPrimaryDivisas ? `-$ ${savedUSD.toFixed(2)} USD` : `-Bs ${(savedUSD * v.tasaUsdt).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+          </div>
+        ` : ''}
+
         <div class="total-ves-row">
-          <span>TOTAL PAGADO:</span>
-          <span>Bs ${(v.totalUsd * v.tasaUsdt).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span>TOTAL PAGADO (${isPrimaryDivisas ? 'DIVISAS' : 'BOLÍVARES'}):</span>
+          <span>${isPrimaryDivisas ? `$ ${v.totalUsd.toFixed(2)} USD` : `Bs ${(v.totalUsd * v.tasaUsdt).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+        </div>
+
+        <div class="row" style="margin-top: 6px; font-weight: bold; font-size: 11px;">
+          <span>${isPrimaryDivisas ? 'Equivalente en Bolívares:' : 'Equivalente en Divisas:'}</span>
+          <span>${isPrimaryDivisas ? `Bs ${(v.totalUsd * v.tasaUsdt).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$ ${v.totalUsd.toFixed(2)} USD`}</span>
         </div>
 
         <div class="center footer">
           <p>*** GARANTÍA CASTELLANOS MOTORS ***</p>
           <p>Garantía de originalidad física en todas las piezas.</p>
-          <p>No se aceptan devoluciones eléctricas usadas.</p>
+          <p>La garantía rige por defectos de fabricación.</p>
           <p style="margin-top: 10px; font-weight: bold;">¡Muchas gracias por su compra!</p>
           <p style="font-size: 8px; color: #888; margin-top: 10px;">Comprobante Digital Emitido Electrónicamente</p>
         </div>
@@ -570,6 +603,35 @@ export default function VentasView({
                       placeholder="Ej. V-12.345.678"
                       className="w-full bg-slate-900 border-2 border-slate-800 focus:border-blue-500 focus:outline-none px-3.5 py-2.5 text-xs text-white uppercase tracking-wider"
                     />
+                  </div>
+
+                  {/* Método de Pago Selector */}
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-[9.5px] uppercase font-bold text-slate-400 block tracking-wider">Forma de Pago del Cliente *</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMetodoPago('divisas')}
+                        className={`py-2 px-2 border-2 text-[10px] uppercase font-extrabold text-center cursor-pointer transition-all ${
+                          selectedMetodoPago === 'divisas'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-[1px_1px_0px_0px_rgba(255,255,255,0.15)]'
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        💵 Divisa ($)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMetodoPago('bolivares')}
+                        className={`py-2 px-2 border-2 text-[10px] uppercase font-extrabold text-center cursor-pointer transition-all ${
+                          selectedMetodoPago === 'bolivares'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-[1px_1px_0px_0px_rgba(255,255,255,0.15)]'
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        🇻🇪 Bolívares (Bs.)
+                      </button>
+                    </div>
                   </div>
                 </div>
 

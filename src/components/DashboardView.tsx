@@ -85,8 +85,10 @@ export default function DashboardView({
       <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto">
         
         {/* BIG SEARCH BOX FOR VEHICLE HISTORY - CUSTOM CORE REQUIREMENT */}
-        <div className="relative bg-white border-2 border-slate-900 rounded-none p-4 sm:p-6 md:p-8 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 pointer-events-none -mr-16 -mt-16 border-l border-b border-dashed border-slate-200 transform rotate-45"></div>
+        <div className="relative bg-white border-2 border-slate-900 rounded-none p-4 sm:p-6 md:p-8 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 -mr-16 -mt-16 border-l border-b border-dashed border-slate-200 transform rotate-45"></div>
+          </div>
           
           <div className="relative z-10 max-w-2xl">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2.5">

@@ -138,9 +138,9 @@ ALTER TABLE ventas_individuales DISABLE ROW LEVEL SECURITY;
 -- Evita errores iniciales insertando datos de prueba que el sistema puede leer de inmediato.
 INSERT INTO clientes (id, nombre, telefono, email, cedula, nacimiento, direccion, observaciones, fecha_reg)
 VALUES 
-('CLI-A1B2', 'Carlos Eduardo Mendoza', '0414-123-4567', 'carlos.mendoza@email.com', 'V-15.342.198', '1982-04-12', 'Av. Libertador, Edif. Altamira, Apto 4B, Caracas', 'Cliente frecuente. Prefiere comunicarse por WhatsApp.', '2025-01-10'),
-('CLI-C3D4', 'María Gabriela Rodríguez', '0424-987-6543', 'maria.gaby@email.com', 'V-18.765.432', '1989-08-22', 'La Tahona, Calle Los Pinos, Qta. Bella Vista', 'Consultar siempre presupuesto antes de iniciar labor.', '2025-02-14'),
-('CLI-E5F6', 'Juan Bautista Pérez', '0412-555-0199', 'juan.perez@email.com', 'V-12.980.345', '1975-11-30', 'Los Dos Caminos, Av. Sucre, Sec. Los Chorros', 'Usa su camión para reparto comercial diario.', '2025-03-01')
+('CLI-A1B2', 'Carlos Eduardo Mendoza', '0412-123-4567', 'carlos.mendoza@email.com', 'V-15.342.198', '1982-04-12', 'Av. Agustín Codazzi, Qta. San Benito, Barinas', 'Cliente frecuente. Prefiere comunicarse por WhatsApp.', '2025-01-10'),
+('CLI-C3D4', 'María Gabriela Rodríguez', '0424-987-6543', 'maria.gaby@email.com', 'V-18.765.432', '1989-08-22', 'Urb. Alto Barinas, Calle Los Pinos, Qta. Bella Vista', 'Consultar siempre presupuesto antes de iniciar labor.', '2025-02-14'),
+('CLI-E5F6', 'Juan Bautista Pérez', '0412-555-0199', 'juan.perez@email.com', 'V-12.980.345', '1975-11-30', 'Av. 23 de Enero, Sec. El Carmen, Barinas', 'Usa su camión para reparto comercial diario.', '2025-03-01')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO vehiculos (id, cliente_id, marca, modelo, anio, placa, color, vin, km, observaciones, fecha_reg)
@@ -152,9 +152,9 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO repuestos (id, codigo, nombre, referencia, categoria, proveedor, cantidad, stock_min, precio, ubicacion, fecha_ingreso)
 VALUES
-('REP-0001', 'REP-0001', 'Filtro de Aceite Toyota Orland', '90915-YZZN1', 'Filtros', 'Distribuidora Automotriz Caracas', 15, 5, 12.50, 'Estante A-4', '2025-01-05'),
+('REP-0001', 'REP-0001', 'Filtro de Aceite Toyota Orland', '90915-YZZN1', 'Filtros', 'Distribuidora Automotriz Barinas', 15, 5, 12.50, 'Estante A-4', '2025-01-05'),
 ('REP-0002', 'REP-0002', 'Aceite Motor Sintético 15W-40 Galón', 'Mobil-1 15W40', 'Lubricantes', 'Lubricentro El Motor', 24, 8, 45.00, 'Pasillo Lubricantes Sec 1', '2025-01-10'),
-('REP-0003', 'REP-0003', 'Pastillas de Freno Delanteras Explorer', 'SP-1243-FR', 'Frenos', 'Frenos Caracas C.A.', 10, 4, 38.00, 'Pasillo Frenos Estante B', '2025-02-14'),
+('REP-0003', 'REP-0003', 'Pastillas de Freno Delanteras Explorer', 'SP-1243-FR', 'Frenos', 'Frenos Barinas C.A.', 10, 4, 38.00, 'Pasillo Frenos Estante B', '2025-02-14'),
 ('REP-0004', 'REP-0004', 'Batería Automotriz Duncan 800 Amp', 'DUN-800D', 'Eléctrico', 'Duncan Express Automotriz', 6, 2, 85.00, 'Estante Eléctrico Nivel 1', '2025-02-28')
 ON CONFLICT (id) DO NOTHING;
 
@@ -162,7 +162,7 @@ INSERT INTO trabajadores (id, nombre, especialidad, telefono, fecha_ingreso)
 VALUES
 ('TRA-001', 'Wilmer Castellanos', 'Mecánica General', '0412-987-6543', '2025-01-01'),
 ('TRA-002', 'Marcos Gutiérrez', 'Sistemas Eléctricos', '0416-555-4433', '2025-02-15'),
-('TRA-003', 'Jesús Mendoza', 'Alineación y Tren Delantero', '0414-111-2233', '2025-03-01')
+('TRA-003', 'Jesús Mendoza', 'Alineación y Tren Delantero', '0412-111-2233', '2025-03-01')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO ordenes (id, cliente_id, auto_id, fecha, descripcion, repuestos, observaciones, labor_cost, km_ingreso, estado, creado_en, trabajador_id)

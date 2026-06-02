@@ -697,6 +697,21 @@ export default function App() {
     }
   };
 
+  const handleUpdateOrden = (updatedOrd: OrdenTrabajo) => {
+    const updated = ordenes.map(o => o.id === updatedOrd.id ? updatedOrd : o);
+    setOrdenes(updated);
+    if (activeInvoice && activeInvoice.id === updatedOrd.id) {
+      setActiveInvoice(updatedOrd);
+    }
+    saveStateToLocalStorage(clientes, vehiculos, repuestos, updated);
+
+    if (supabaseStatus.connected && supabaseStatus.tablesOk) {
+      upsertOrdenDB(updatedOrd).catch(err => {
+        console.error('Supabase order update sync error:', err);
+      });
+    }
+  };
+
   const handleSaveVenta = (newSale: VentaIndividual) => {
     // 1. Update sales list
     const updatedSales = [newSale, ...ventas];
@@ -1313,6 +1328,7 @@ export default function App() {
           clients={clientes}
           vehicles={vehiculos}
           onClose={() => setActiveInvoice(null)}
+          onUpdateOrden={handleUpdateOrden}
         />
       )}
 

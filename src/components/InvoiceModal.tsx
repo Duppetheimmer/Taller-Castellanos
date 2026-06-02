@@ -7,9 +7,10 @@ interface InvoiceModalProps {
   clients: Cliente[];
   vehicles: Vehiculo[];
   onClose: () => void;
+  onUpdateOrden?: (updated: OrdenTrabajo) => void;
 }
 
-export default function InvoiceModal({ orden, clients, vehicles, onClose }: InvoiceModalProps) {
+export default function InvoiceModal({ orden, clients, vehicles, onClose, onUpdateOrden }: InvoiceModalProps) {
   const cliente = clients.find(c => c.id === orden.clienteId);
   const vehiculo = vehicles.find(v => v.id === orden.autoId);
 
@@ -20,6 +21,8 @@ export default function InvoiceModal({ orden, clients, vehicles, onClose }: Invo
     const saved = localStorage.getItem('castellanos_tasa_usdt');
     return saved || '44.50';
   });
+
+  const [metodoPago, setMetodoPago] = useState<'divisas' | 'bolivares'>('divisas');
 
   const tasaUSDT = parseFloat(tasaInput) || 0;
   const totalVES = total * tasaUSDT;
@@ -86,13 +89,14 @@ export default function InvoiceModal({ orden, clients, vehicles, onClose }: Invo
         <div class="center">
           <div class="header-title">⚙️ CASTELLANOS MOTORS</div>
           <p class="sub">Servicio Mecánico y Repuestos</p>
-          <p class="sub">Rif: J-40892813-0 | Telf: 0414-123-4567</p>
-          <p class="sub">Caracas, Venezuela</p>
+          <p class="sub">Rif: J-406610917 | Telf: 0412 7735263</p>
+          <p class="sub">Barinas, Venezuela</p>
         </div>
 
         <div class="id-box">NRO ORDEN: ${orden.id}</div>
         
         <div class="row"><span class="lbl">De la Fecha:</span><span class="val">${orden.fecha.split('-').reverse().join('/')}</span></div>
+        <div class="row"><span class="lbl">Forma de Pago:</span><span class="val" style="font-weight: bold; background: #e1f5fe; border: 1px solid #0288d1; padding: 2px 6px; border-radius: 2px; text-transform: uppercase; font-size: 11px; display: inline-block;">${metodoPago === 'divisas' ? '💵 PAGO EN DIVISAS ($)' : '🇻🇪 PAGO EN BOLÍVARES (Bs.)'}</span></div>
         <div class="row"><span class="lbl">Estado:</span><span class="val">${stateLabels[orden.estado] || orden.estado}</span></div>
 
         <hr class="divider">
@@ -121,22 +125,71 @@ export default function InvoiceModal({ orden, clients, vehicles, onClose }: Invo
         ${orden.repuestos.length > 0 ? `
           <hr class="divider">
           <div class="section-title">Repuestos y Piezas Utilizadas</div>
-          ${orden.repuestos.map(p => `
-            <div class="rep-row">
-              <span>${p.nombre} (x${p.qty})</span>
-              <span>Bs ${(p.precio * p.qty * tasaUSDT).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-          `).join('')}
+          ${orden.repuestos.map(p => {
+            const orig = p.precioOriginal !== undefined ? p.precioOriginal : p.precio;
+            const hasDiscount = orig > p.precio;
+            
+            const origPriceBs = orig * tasaUSDT;
+            const finalPriceBs = p.precio * tasaUSDT;
+            
+            const priceBsText = hasDiscount 
+              ? `<span style="text-decoration: line-through; color: #888; font-size: 11px; margin-right: 4px;">Bs ${origPriceBs.toLocaleString('es', { minimumFractionDigits: 2 })}</span><span style="font-weight: bold; color: #111;">Bs ${finalPriceBs.toLocaleString('es', { minimumFractionDigits: 2 })}</span>`
+              : `Bs ${finalPriceBs.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              
+            const priceUsdText = hasDiscount
+              ? `<span style="text-decoration: line-through; color: #888; margin-right: 4px;">$${orig.toFixed(2)}</span><span style="font-weight: bold; color: #27ae60;">$${p.precio.toFixed(2)}</span>`
+              : `$${p.precio.toFixed(2)}`;
+
+            const primaryItemTotalText = metodoPago === 'divisas'
+              ? `$ ${(p.precio * p.qty).toFixed(2)} USD`
+              : `Bs ${(p.precio * p.qty * tasaUSDT).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            return `
+              <div class="rep-row" style="display: block; padding: 6px 0; border-bottom: 1px dotted #ccc;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                  <span>⚙️ ${p.nombre} (x${p.qty})</span>
+                  <span>${primaryItemTotalText}</span>
+                </div>
+                <div style="font-size: 10px; color: #555; margin-top: 2px; font-family: monospace;">
+                  Unit: ${priceUsdText} | ${priceBsText} ${hasDiscount ? '<span style="color: #27ae60; font-weight: bold; font-size: 9px; margin-left: 2px; text-transform: uppercase;">(Rebaja Aplicada)</span>' : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
         ` : ''}
 
         <hr class="divider">
 
-        ${subtotalParts > 0 ? `<div class="row"><span class="lbl">Subtotal Repuestos:</span><span class="val">Bs ${(subtotalParts * tasaUSDT).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>` : ''}
-        ${orden.laborCost > 0 ? `<div class="row"><span class="lbl">Costo por Mano de Obra:</span><span class="val">Bs ${(orden.laborCost * tasaUSDT).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>` : ''}
+        ${subtotalParts > 0 ? `<div class="row"><span class="lbl">Subtotal Repuestos:</span><span class="val">${metodoPago === 'divisas' ? `$ ${subtotalParts.toFixed(2)} USD` : `Bs ${(subtotalParts * tasaUSDT).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span></div>` : ''}
+        ${orden.laborCost > 0 ? `<div class="row"><span class="lbl">Costo por Mano de Obra:</span><span class="val">${metodoPago === 'divisas' ? `$ ${(orden.laborCost).toFixed(2)} USD` : `Bs ${(orden.laborCost * tasaUSDT).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span></div>` : ''}
         
+        ${(() => {
+          const sumOriginal = orden.repuestos.reduce((sum, item) => sum + (item.precioOriginal !== undefined ? item.precioOriginal : item.precio) * item.qty, 0);
+          const partsSavings = sumOriginal - subtotalParts;
+          if (partsSavings > 0) {
+            return `
+              <div class="row" style="color: #27ae60; font-weight: bold; font-family: monospace; font-size: 11px;">
+                <span>✨ Rebaja/Ahorro en Repuestos:</span>
+                <span>${metodoPago === 'divisas' ? `-$${partsSavings.toFixed(2)} USD` : `-Bs ${(partsSavings * tasaUSDT).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+            `;
+          }
+          return '';
+        })()}
+
         <div class="total-ves-row">
-          <span>TOTAL A PAGAR:</span>
-          <span>Bs ${totalVES.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span>TOTAL A PAGAR (${metodoPago === 'divisas' ? 'DIVISAS' : 'BOLÍVARES'}):</span>
+          <span>${metodoPago === 'divisas' ? `$ ${total.toFixed(2)} USD` : `Bs ${totalVES.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+        </div>
+
+        <div class="row" style="margin-top: 6px; font-weight: bold;">
+          <span>${metodoPago === 'divisas' ? 'Equivalente en Bolívares:' : 'Equivalente en Divisas:'}</span>
+          <span>${metodoPago === 'divisas' ? `Bs ${totalVES.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$ ${total.toFixed(2)} USD`}</span>
+        </div>
+
+        <div class="row" style="font-size: 10px; color: #555; border-bottom: 2px solid #111; padding-bottom: 4px; font-family: monospace;">
+          <span>Tasa de Cambio Referencia:</span>
+          <span>1 USD = Bs ${tasaUSDT.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
 
         <div class="center footer">
@@ -155,6 +208,29 @@ export default function InvoiceModal({ orden, clients, vehicles, onClose }: Invo
       </html>
     `);
     w.document.close();
+  };
+
+  const handleApplyCustomPrice = (repuestoId: string, newPrice: number) => {
+    if (!onUpdateOrden) return;
+
+    const updatedRepuestos = orden.repuestos.map(r => {
+      if (r.id === repuestoId) {
+        const origPrice = r.precioOriginal !== undefined ? r.precioOriginal : r.precio;
+        return {
+          ...r,
+          precio: newPrice,
+          precioOriginal: origPrice
+        };
+      }
+      return r;
+    });
+
+    const updatedOrder: OrdenTrabajo = {
+      ...orden,
+      repuestos: updatedRepuestos
+    };
+
+    onUpdateOrden(updatedOrder);
   };
 
   return (
@@ -257,6 +333,42 @@ export default function InvoiceModal({ orden, clients, vehicles, onClose }: Invo
             )}
           </div>
 
+          {/* SELECCIÓN DE MÉTODO DE PAGO */}
+          <div className="bg-white border-2 border-slate-900 p-4 font-mono text-xs space-y-3 pb-3.5 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)]">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+              <span className="font-extrabold uppercase text-slate-800 flex items-center gap-1.5 text-[10px]">
+                💳 FORMA DE IMPRESIÓN: MÉTODO DE PAGO
+              </span>
+            </div>
+            <p className="text-[9px] text-slate-500 leading-relaxed font-semibold lowercase">
+              Seleccione la opción de pago que prefiera el cliente para que conste de manera visible e inequívoca en la boleta técnica impresa.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setMetodoPago('divisas')}
+                className={`py-2 px-3 border-2 font-black text-center text-[10.5px] cursor-pointer transition-all ${
+                  metodoPago === 'divisas'
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
+                }`}
+              >
+                💵 PAGO EN DIVISAS ($)
+              </button>
+              <button
+                type="button"
+                onClick={() => setMetodoPago('bolivares')}
+                className={`py-2 px-3 border-2 font-black text-center text-[10.5px] cursor-pointer transition-all ${
+                  metodoPago === 'bolivares'
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
+                }`}
+              >
+                🇻🇪 EN BOLÍVARES (Bs.)
+              </button>
+            </div>
+          </div>
+
           {/* TASA DE CAMBIO REFERENCIAL - CONFIG BLOCK (Bolívares) */}
           <div className="bg-amber-50 border-2 border-amber-400 p-4 font-mono text-xs space-y-2 pb-3.5">
             <div className="flex items-center justify-between gap-1.5 border-b border-amber-200 pb-1.5">
@@ -296,15 +408,66 @@ export default function InvoiceModal({ orden, clients, vehicles, onClose }: Invo
               <div className="space-y-1.5">
                 <p className="text-[9px] text-slate-400 font-bold uppercase mb-1">Repuestos Utilizados</p>
                 <div className="space-y-1">
-                  {orden.repuestos.map((r, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-xs text-slate-700 bg-white p-2 border border-slate-200">
-                      <div>
-                        <span className="font-bold text-slate-900 uppercase">🔧 {r.nombre}</span>
-                        <span className="text-slate-400 ml-2 text-[9px]">x{r.qty} uds</span>
+                  {orden.repuestos.map((r, idx) => {
+                    const orig = r.precioOriginal !== undefined ? r.precioOriginal : r.precio;
+                    const hasDiscount = orig > r.precio;
+                    return (
+                      <div key={idx} className="bg-white p-3 border-2 border-slate-900 rounded-none space-y-2 mb-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="font-extrabold text-slate-900 block">⚙️ {r.nombre}</span>
+                            <span className="text-slate-400 font-mono text-[9.5px]">CANTIDAD: {r.qty} UDS</span>
+                          </div>
+                          <div className="text-right font-mono font-bold text-slate-950">
+                            {hasDiscount && (
+                              <span className="text-[10px] text-slate-400 line-through mr-2 font-mono">${(orig * r.qty).toFixed(2)}</span>
+                            )}
+                            <span className={`${hasDiscount ? 'text-emerald-600' : ''}`}>${(r.precio * r.qty).toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        {/* Interactive discount settings */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 p-2 border border-slate-200">
+                          <div className="text-[9.5px] text-slate-500 font-semibold uppercase tracking-wider">
+                            {hasDiscount ? (
+                              <span className="text-emerald-600 block">
+                                ✨ Rebaja: -${(orig - r.precio).toFixed(2)} USD c/u
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 block font-mono">Estándar: ${r.precio.toFixed(2)} USD c/u</span>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0 font-sans">
+                            <span className="text-[9px] font-extrabold text-slate-600 uppercase">Ajustar Precio ($):</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder={r.precio.toFixed(2)}
+                              className="w-16 px-1.5 py-1 border-2 border-slate-900 bg-white text-slate-900 font-bold text-center text-xs focus:outline-none"
+                              value={r.precio}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                if (!isNaN(val) && val >= 0) {
+                                  handleApplyCustomPrice(r.id, val);
+                                }
+                              }}
+                            />
+                            {hasDiscount && (
+                              <button
+                                type="button"
+                                onClick={() => handleApplyCustomPrice(r.id, orig)}
+                                className="px-1.5 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 text-[8.5px] font-black border border-red-300 uppercase rounded cursor-pointer transition-colors"
+                              >
+                                Quitar Rebaja
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <span className="font-bold text-slate-900">${(r.precio * r.qty).toLocaleString('es')}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -318,6 +481,19 @@ export default function InvoiceModal({ orden, clients, vehicles, onClose }: Invo
                   <span className="text-slate-900">${subtotalParts.toLocaleString('es')}</span>
                 </div>
               )}
+              {(() => {
+                const sumOriginal = orden.repuestos.reduce((sum, item) => sum + (item.precioOriginal !== undefined ? item.precioOriginal : item.precio) * item.qty, 0);
+                const partsSavings = sumOriginal - subtotalParts;
+                if (partsSavings > 0) {
+                  return (
+                    <div className="flex justify-between text-emerald-600 font-extrabold">
+                      <span>✨ Ahorro / Rebaja de Repuestos:</span>
+                      <span>-${partsSavings.toFixed(2)} USD</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               {orden.laborCost > 0 && (
                 <div className="flex justify-between">
                   <span>Subtotal Mano de Obra (USD):</span>

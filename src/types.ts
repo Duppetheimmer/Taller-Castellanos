@@ -43,6 +43,7 @@ export interface RepuestoUtilizado {
   nombre: string;
   qty: number;
   precio: number;
+  precioOriginal?: number;
 }
 
 export interface OrdenTrabajo {
@@ -100,6 +101,7 @@ export interface VentaIndividual {
   tasaUsdt: number;
   totalUsd: number;
   creadoEn: string;
+  metodoPago?: 'divisas' | 'bolivares';
 }
 
 

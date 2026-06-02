@@ -4,11 +4,11 @@ export const INITIAL_CLIENTES: Cliente[] = [
   {
     id: 'CLI-A1B2',
     nombre: 'Carlos Eduardo Mendoza',
-    telefono: '0414-123-4567',
+    telefono: '0412-123-4567',
     email: 'carlos.mendoza@email.com',
     cedula: 'V-15.342.198',
     nacimiento: '1982-04-12',
-    direccion: 'Av. Libertador, Edif. Altamira, Apto 4B, Caracas',
+    direccion: 'Av. Agustín Codazzi, Qta. San Benito, Barinas',
     observaciones: 'Cliente frecuente. Prefiere comunicarse por WhatsApp.',
     fechaReg: '2025-01-10',
   },
@@ -19,7 +19,7 @@ export const INITIAL_CLIENTES: Cliente[] = [
     email: 'maria.gaby@email.com',
     cedula: 'V-18.765.432',
     nacimiento: '1989-08-22',
-    direccion: 'La Tahona, Calle Los Pinos, Qta. Bella Vista',
+    direccion: 'Urb. Alto Barinas, Calle Los Pinos, Qta. Bella Vista',
     observaciones: 'Consultar siempre presupuesto antes de iniciar labor.',
     fechaReg: '2025-02-14',
   },
@@ -30,7 +30,7 @@ export const INITIAL_CLIENTES: Cliente[] = [
     email: 'juan.perez@email.com',
     cedula: 'V-12.980.345',
     nacimiento: '1975-11-30',
-    direccion: 'Los Dos Caminos, Av. Sucre, Sec. Los Chorros',
+    direccion: 'Av. 23 de Enero, Sec. El Carmen, Barinas',
     observaciones: 'Usa su camión para reparto comercial diario.',
     fechaReg: '2025-03-01',
   }
@@ -85,7 +85,7 @@ export const INITIAL_REPUESTOS: Repuesto[] = [
     nombre: 'Filtro de Aceite Toyota Orland',
     referencia: '90915-YZZN1',
     categoria: 'Filtros',
-    proveedor: 'Distribuidora Automotriz Caracas',
+    proveedor: 'Distribuidora Automotriz Barinas',
     cantidad: 15,
     stockMin: 5,
     precio: 12.50,
@@ -176,7 +176,7 @@ export const INITIAL_REPUESTOS: Repuesto[] = [
     nombre: 'Pastillas de Freno Chevrolet Silverado HD',
     referencia: 'D1411-8521',
     categoria: 'Frenos',
-    proveedor: 'Distribuidora Automotriz Caracas',
+    proveedor: 'Distribuidora Automotriz Barinas',
     cantidad: 5,
     stockMin: 2,
     precio: 110.00,
@@ -313,5 +313,5 @@ export const INITIAL_ORDENES: OrdenTrabajo[] = [
 export const INITIAL_TRABAJADORES: Trabajador[] = [
   { id: 'TRA-001', nombre: 'José Manuel Garrido', especialidad: 'Mecánica General', telefono: '0412-111-2233', fechaIngreso: '2024-05-15' },
   { id: 'TRA-002', nombre: 'Franklin Ostos', especialidad: 'Sistemas Eléctricos', telefono: '0424-222-3344', fechaIngreso: '2024-08-20' },
-  { id: 'TRA-003', nombre: 'Douglas Pernía', especialidad: 'Alineación y Balanceo', telefono: '0414-333-4455', fechaIngreso: '2025-01-10' }
+  { id: 'TRA-003', nombre: 'Douglas Pernía', especialidad: 'Alineación y Balanceo', telefono: '0412-333-4455', fechaIngreso: '2025-01-10' }
 ];

@@ -73,6 +73,19 @@ export default function OrdersView({
   const [requestPartOrderId, setRequestPartOrderId] = useState<string | null>(null);
   const [selectedRepuestoId, setSelectedRepuestoId] = useState('');
   const [requestedQty, setRequestedQty] = useState(1);
+  const [partRequestSearch, setPartRequestSearch] = useState('');
+
+  // Real-time filter for spare parts requested by mechanic
+  const filteredRepuestosInventario = useMemo(() => {
+    const q = partRequestSearch.toLowerCase().trim();
+    if (!q) return repuestosInventario;
+    return repuestosInventario.filter(part => 
+      part.nombre.toLowerCase().includes(q) ||
+      part.codigo.toLowerCase().includes(q) ||
+      (part.referencia && part.referencia.toLowerCase().includes(q)) ||
+      (part.categoria && part.categoria.toLowerCase().includes(q))
+    );
+  }, [partRequestSearch, repuestosInventario]);
 
   // Find details for rows
   const clientOf = (cId: string) => clientes.find(c => c.id === cId);
@@ -162,6 +175,7 @@ export default function OrdersView({
     setRequestPartOrderId(null);
     setSelectedRepuestoId('');
     setRequestedQty(1);
+    setPartRequestSearch('');
   };
 
   // Current worker's profile
@@ -771,13 +785,73 @@ export default function OrdersView({
                         onSubmit={(e) => handleRequestPartSubmit(e, o.id)}
                         className="p-4 bg-slate-50 border-t border-slate-900 space-y-3 animate-in fade-in duration-200"
                       >
-                        <h4 className="text-[10.5px] uppercase font-bold text-slate-700 flex items-center gap-1">
+                        <h4 className="text-[10.5px] uppercase font-bold text-slate-700 flex items-center gap-1.5">
                           🔑 Solicitar Repuestos de la Estantería a Recepcionistas
                         </h4>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <label className="text-[9px] uppercase font-bold text-slate-500">Filtrar Repuesto *</label>
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] uppercase font-bold text-slate-500 block">🔍 Buscador Rápido de Repuestos</label>
+                            
+                            <div className="relative">
+                              <input
+                                type="text"
+                                placeholder="Escriba código, nombre, o aplicación..."
+                                value={partRequestSearch}
+                                onChange={(e) => setPartRequestSearch(e.target.value)}
+                                className="w-full bg-white border-2 border-slate-900 p-1.5 pr-8 text-xs focus:ring-0 focus:outline-none focus:border-blue-600 font-mono"
+                              />
+                              {partRequestSearch && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPartRequestSearch('')}
+                                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-900 text-xs font-bold"
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Real-time autocomplete suggestions */}
+                            {partRequestSearch.trim() !== '' && (
+                              <div className="bg-white border-2 border-slate-900 rounded-none max-h-40 overflow-y-auto divide-y divide-slate-200 mt-1 relative z-10">
+                                {filteredRepuestosInventario.length === 0 ? (
+                                  <div className="p-2 text-[10px] text-slate-500 italic">No se hallaron repuestos con "{partRequestSearch}"</div>
+                                ) : (
+                                  filteredRepuestosInventario.slice(0, 5).map(part => (
+                                    <button
+                                      key={part.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedRepuestoId(part.id);
+                                        setPartRequestSearch('');
+                                      }}
+                                      className={`w-full text-left p-2 hover:bg-slate-50 flex justify-between items-center transition-all ${
+                                        selectedRepuestoId === part.id ? 'bg-slate-100 font-bold border-l-4 border-blue-600' : 'text-slate-700'
+                                      }`}
+                                    >
+                                      <div className="text-[10px]">
+                                        <span className="font-bold text-slate-900 block leading-tight">{part.nombre}</span>
+                                        <span className="text-[9px] text-slate-500 block font-mono">
+                                          Código: {part.codigo} {part.referencia ? `| Ref: ${part.referencia}` : ''}
+                                        </span>
+                                      </div>
+                                      <div className="text-right text-[10px] font-mono leading-none">
+                                        <span className="text-blue-600 font-bold block mb-0.5">${part.precio.toFixed(2)}</span>
+                                        <span className="text-slate-500 text-[9px] block">Disponibles: {part.cantidad}</span>
+                                      </div>
+                                    </button>
+                                  ))
+                                )}
+                                {filteredRepuestosInventario.length > 5 && (
+                                  <div className="p-1 px-2.5 text-center text-[9px] text-blue-600 bg-slate-50 border-t border-slate-200 uppercase tracking-widest font-mono">
+                                    + mostrando {filteredRepuestosInventario.slice(0, 5).length} de {filteredRepuestosInventario.length} coincidencias.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            <label className="text-[9px] uppercase font-bold text-slate-500 block pt-1">Repuesto a Solicitar *</label>
                             <select
                               required
                               value={selectedRepuestoId}
@@ -785,7 +859,7 @@ export default function OrdersView({
                               className="w-full bg-white border-2 border-slate-900 p-2 text-xs focus:ring-0 focus:outline-none focus:border-blue-600"
                             >
                               <option value="">-- SELECCIONAR REPUESTO --</option>
-                              {repuestosInventario.map(part => (
+                              {filteredRepuestosInventario.map(part => (
                                 <option key={part.id} value={part.id}>
                                   {part.nombre} (${part.precio} | Stock: {part.cantidad})
                                 </option>
@@ -809,7 +883,7 @@ export default function OrdersView({
                         <div className="flex gap-2 justify-end pt-2">
                           <button
                             type="button"
-                            onClick={() => { setRequestPartOrderId(null); setSelectedRepuestoId(''); setRequestedQty(1); }}
+                            onClick={() => { setRequestPartOrderId(null); setSelectedRepuestoId(''); setRequestedQty(1); setPartRequestSearch(''); }}
                             className="px-3 py-1 border-2 border-slate-900 text-slate-700 text-[10px] font-bold uppercase transition-all bg-white"
                           >
                             Cancelar
