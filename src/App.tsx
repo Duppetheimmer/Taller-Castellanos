@@ -410,7 +410,10 @@ export default function App() {
   // --- HANDLERS ---
   
   // Clients CRUD
-  const handleSaveClient = (data: Omit<Cliente, 'id' | 'fechaReg'>) => {
+  const handleSaveClient = (
+    data: Omit<Cliente, 'id' | 'fechaReg'>,
+    associatedVehicles?: (Omit<Vehiculo, 'id' | 'clienteId' | 'fechaReg'> & { id?: string })[]
+  ) => {
     let updated: Cliente[];
     let targetClient: Cliente;
     
@@ -427,9 +430,67 @@ export default function App() {
     }
     
     setClientes(updated);
-    saveStateToLocalStorage(updated, vehiculos, repuestos, ordenes);
     
-    // Sync remotely with Supabase Cloud
+    // Process associated vehicles
+    let nextVehicles = [...vehiculos];
+    if (associatedVehicles) {
+      const parentClientId = targetClient.id;
+      
+      // Get IDs of vehicles that were previously assigned to this client
+      const existingVehicleIds = vehiculos.filter(v => v.clienteId === parentClientId).map(v => v.id);
+      
+      const processedVehs: Vehiculo[] = associatedVehicles.map(v => {
+        if (v.id) {
+          const orig = vehiculos.find(o => o.id === v.id);
+          return {
+            ...v,
+            id: v.id,
+            clienteId: parentClientId,
+            fechaReg: orig ? orig.fechaReg : getTodayISO()
+          } as Vehiculo;
+        } else {
+          return {
+            ...v,
+            id: genCompactId('VEH'),
+            clienteId: parentClientId,
+            fechaReg: getTodayISO()
+          } as Vehiculo;
+        }
+      });
+      
+      const incomingIds = processedVehs.map(v => v.id);
+      const deletedIds = existingVehicleIds.filter(id => !incomingIds.includes(id));
+      
+      // Filter out this client's vehicles and append the newly processed ones
+      nextVehicles = [
+        ...vehiculos.filter(v => v.clienteId !== parentClientId),
+        ...processedVehs
+      ];
+      setVehiculos(nextVehicles);
+      
+      if (processedVehs.length > 0) {
+        setSelectedVehiculoId(processedVehs[0].id);
+      }
+      
+      // Async Remote Sync with Supabase Cloud
+      if (supabaseStatus.connected && supabaseStatus.tablesOk) {
+        processedVehs.forEach(v => {
+          upsertVehiculoDB(v).catch(err => {
+            console.error('Supabase associated vehicles sync error:', err);
+          });
+        });
+        
+        deletedIds.forEach(id => {
+          deleteVehiculoDB(id).catch(err => {
+            console.error('Supabase vehicles delete sync error:', err);
+          });
+        });
+      }
+    }
+    
+    saveStateToLocalStorage(updated, nextVehicles, repuestos, ordenes);
+    
+    // Sync client remotely with Supabase Cloud
     if (supabaseStatus.connected && supabaseStatus.tablesOk) {
       upsertClienteDB(targetClient).catch(err => {
         console.error('Supabase client sync error:', err);
@@ -1336,6 +1397,7 @@ export default function App() {
       {showClientForm && (
         <ClienteModal
           cliente={editClient}
+          vehiculos={vehiculos}
           onSave={handleSaveClient}
           onClose={() => { setShowClientForm(false); setEditClient(null); }}
         />

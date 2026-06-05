@@ -278,13 +278,9 @@ export default function VehiclesView({
             Ficha técnica de autos, kilometraje y cronologías de reparación.
           </p>
         </div>
-        <button
-          onClick={onAddVehicle}
-          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-none border-2 border-slate-900 transition-all uppercase tracking-wider self-start sm:self-auto shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Registrar Vehículo
-        </button>
+        <div className="text-[10px] bg-blue-950/40 border border-blue-500/20 text-blue-300 font-mono py-1.5 px-3.5 uppercase tracking-widest leading-none">
+          🔍 Historial Modo Lectura
+        </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
@@ -402,20 +398,6 @@ export default function VehiclesView({
                     >
                       <Printer className="w-3.5 h-3.5 text-blue-600" />
                       Imprimir Ficha
-                    </button>
-                    <button
-                      onClick={() => onEditVehicle(activeVehicle)}
-                      className="p-1.5 bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 rounded-none cursor-pointer"
-                      title="Editar ficha"
-                    >
-                      <Edit2 className="w-4 h-4 text-blue-600" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(activeVehicle.id)}
-                      className="p-1.5 bg-red-50 hover:bg-red-100 border-2 border-slate-900 text-red-600 rounded-none cursor-pointer flex items-center justify-center"
-                      title="Eliminar auto"
-                    >
-                      {isAdmin ? <Trash2 className="w-4 h-4" /> : <Lock className="w-4 h-4 text-red-400" />}
                     </button>
                   </div>
                 </div>
