@@ -89,6 +89,8 @@ CREATE TABLE IF NOT EXISTS trabajadores (
     especialidad TEXT NOT NULL,
     telefono TEXT NOT NULL,
     fecha_ingreso TEXT NOT NULL,
+    usuario TEXT,
+    contrasena TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -124,6 +126,10 @@ CREATE TABLE IF NOT EXISTS ventas_individuales (
 ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS trabajador_id TEXT;
 ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS diagnostico TEXT;
 
+-- MIGRACIÓN IMPORTANTE: Asegurar que las columnas existan en la tabla trabajadores (para login de mecánicos)
+ALTER TABLE trabajadores ADD COLUMN IF NOT EXISTS usuario TEXT;
+ALTER TABLE trabajadores ADD COLUMN IF NOT EXISTS contrasena TEXT;
+
 -- DESACTIVAR ROW LEVEL SECURITY EN TODAS LAS TABLAS 
 -- (Corrige fallos silenciosos al guardar/actualizar datos)
 ALTER TABLE clientes DISABLE ROW LEVEL SECURITY;
@@ -158,12 +164,17 @@ VALUES
 ('REP-0004', 'REP-0004', 'Batería Automotriz Duncan 800 Amp', 'DUN-800D', 'Eléctrico', 'Duncan Express Automotriz', 6, 2, 85.00, 'Estante Eléctrico Nivel 1', '2025-02-28')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO trabajadores (id, nombre, especialidad, telefono, fecha_ingreso)
+INSERT INTO trabajadores (id, nombre, especialidad, telefono, fecha_ingreso, usuario, contrasena)
 VALUES
-('TRA-001', 'Wilmer Castellanos', 'Mecánica General', '0412-987-6543', '2025-01-01'),
-('TRA-002', 'Marcos Gutiérrez', 'Sistemas Eléctricos', '0416-555-4433', '2025-02-15'),
-('TRA-003', 'Jesús Mendoza', 'Alineación y Tren Delantero', '0412-111-2233', '2025-03-01')
+('TRA-001', 'Wilmer Castellanos', 'Mecánica General', '0412-987-6543', '2025-01-01', 'wilmer', 'wilmer123'),
+('TRA-002', 'Marcos Gutiérrez', 'Sistemas Eléctricos', '0416-555-4433', '2025-02-15', 'marcos', 'marcos123'),
+('TRA-003', 'Jesús Mendoza', 'Alineación y Tren Delantero', '0412-111-2233', '2025-03-01', 'jesus', 'jesus123')
 ON CONFLICT (id) DO NOTHING;
+
+-- Asignar usuarios y claves por defecto a los técnicos iniciales si aún no tienen credenciales asignadas
+UPDATE trabajadores SET usuario = 'wilmer', contrasena = 'wilmer123' WHERE id = 'TRA-001' AND (usuario IS NULL OR usuario = '');
+UPDATE trabajadores SET usuario = 'marcos', contrasena = 'marcos123' WHERE id = 'TRA-002' AND (usuario IS NULL OR usuario = '');
+UPDATE trabajadores SET usuario = 'jesus', contrasena = 'jesus123' WHERE id = 'TRA-003' AND (usuario IS NULL OR usuario = '');
 
 INSERT INTO ordenes (id, cliente_id, auto_id, fecha, descripcion, repuestos, observaciones, labor_cost, km_ingreso, estado, creado_en, trabajador_id)
 VALUES

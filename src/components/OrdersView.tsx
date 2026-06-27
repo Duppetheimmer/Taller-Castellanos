@@ -1,6 +1,7 @@
 import { useState, useMemo, FormEvent } from 'react';
 import { OrdenTrabajo, Cliente, Vehiculo, Trabajador, Repuesto, SolicitudRepuesto } from '../types';
 import { Wrench, Search, Plus, Printer, RefreshCw, Calendar, Filter, Lock, User, CheckCircle, PackageOpen, ClipboardSignature } from 'lucide-react';
+import WorkerEditCredentialsModal from './WorkerEditCredentialsModal';
 
 interface OrdersViewProps {
   ordenes: OrdenTrabajo[];
@@ -23,6 +24,9 @@ interface OrdersViewProps {
   onRequestRepuesto: (orderId: string, repuestoId: string, qty: number) => void;
   repuestosInventario: Repuesto[];
   onChangeActiveWorkerId?: (id: string) => void;
+  loggedWorkerId?: string | null;
+  onUpdateWorkerCredentials?: (id: string, user: string, pass: string) => void;
+  onGlobalLogout?: () => void;
 }
 
 export default function OrdersView({
@@ -43,8 +47,12 @@ export default function OrdersView({
   onDiagnosticUpdate,
   onRequestRepuesto,
   repuestosInventario,
-  onChangeActiveWorkerId
+  onChangeActiveWorkerId,
+  loggedWorkerId = null,
+  onUpdateWorkerCredentials,
+  onGlobalLogout
 }: OrdersViewProps) {
+  const [showEditCredentials, setShowEditCredentials] = useState(false);
   const [filterState, setFilterState] = useState<'Todas' | 'abierta' | 'en_proceso' | 'terminada'>('Todas');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -55,6 +63,10 @@ export default function OrdersView({
 
   const myActiveJobsCount = useMemo(() => {
     return ordenes.filter(o => o.trabajadorId === activeWorkerId && o.estado !== 'terminada').length;
+  }, [ordenes, activeWorkerId]);
+
+  const visibleOrdersCount = useMemo(() => {
+    return ordenes.filter(o => !o.trabajadorId || o.trabajadorId === activeWorkerId).length;
   }, [ordenes, activeWorkerId]);
 
   const [workerTab, setWorkerTab] = useState<'disponibles' | 'mios' | 'todos'>(() => {
@@ -98,6 +110,9 @@ export default function OrdersView({
     
     // Support worker specific tab filter
     if (userRole === 'trabajador') {
+      // Base safety filtration: A worker cannot view orders assigned to other workers
+      list = list.filter(o => !o.trabajadorId || o.trabajadorId === activeWorkerId);
+      
       if (workerTab === 'disponibles') {
         list = list.filter(o => !o.trabajadorId && o.estado !== 'terminada');
       } else if (workerTab === 'mios') {
@@ -215,84 +230,133 @@ export default function OrdersView({
         {userRole === 'trabajador' && (
           <div className="space-y-4">
             
-            {/* COMPACT ELECTRONIC INDUSTRIAL ROSTER BADGES */}
-            <div className="bg-slate-900 border-2 border-slate-950 p-4 font-mono text-white shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-4">
-              
-              {/* WARNING INDUSTRIAL ROW HEAD */}
-              <div className="bg-amber-500 text-slate-950 p-2.5 text-[10px] font-black uppercase tracking-wider flex flex-col sm:flex-row items-center justify-between gap-1 border-b-2 border-slate-950">
-                <span className="flex items-center gap-1.5 font-sans">
-                  <span className="inline-block bg-slate-950 text-amber-500 px-1.5 py-0.5 text-[9px] font-mono font-black">MÓDULO TALLER</span>
-                  <span>PREVENCIÓN DE ERRORES: VERIFIQUE SU IDENTIDAD ANTES DE OPERAR</span>
-                </span>
-                <span className="bg-slate-950 text-white px-2 py-0.5 font-mono text-[9px] tracking-widest font-bold">DISPOSITIVO COMPARTIDO</span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider">
-                      🛠️ SELECCIONE SU NOMBRE DE LA LISTA:
-                    </span>
+            {/* If logged in with a password-protected session, show a beautiful locked operator status. Otherwise render select buttons */}
+            {loggedWorkerId ? (
+              <div className="bg-slate-900 border-2 border-slate-950 p-4 font-mono text-white shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-3">
+                <div className="bg-blue-600 text-white p-2.5 text-[10px] font-black uppercase tracking-wider flex flex-col sm:flex-row items-center justify-between gap-1 border-b-2 border-slate-950">
+                  <span className="flex items-center gap-1.5 font-sans">
+                    <span className="inline-block bg-slate-950 text-blue-400 px-1.5 py-0.5 text-[9px] font-mono font-black">OPERARIO ACTIVO</span>
+                    <span>SESIÓN DE ACCESO RESTRINGIDO Y PRIVADO</span>
+                  </span>
+                  <span className="bg-slate-950 text-emerald-400 px-2 py-0.5 font-mono text-[9px] tracking-widest font-bold">● TERMINAL PROTEGIDA</span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-2 bg-slate-950/40 border border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 bg-blue-600 text-white border-2 border-blue-400 flex items-center justify-center font-black text-sm uppercase">
+                      {activeWorker?.nombre.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                    </div>
+                    <div>
+                      <span className="font-extrabold text-sm uppercase tracking-tight block text-white leading-none mb-1">
+                        {activeWorker?.nombre}
+                      </span>
+                      <span className="text-[10px] uppercase font-black px-1.5 py-0.5 border bg-blue-600/20 text-blue-300 border-blue-500/50">
+                        Especialidad: {activeWorker?.especialidad}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-slate-400 italic">
-                    Toque su tarjeta para activarse como operador activo de la sesión.
+                  <div className="text-right font-mono text-[10px] text-slate-400">
+                    <p>ESTADO: <span className="text-emerald-400 font-bold">AUTENTICADO</span></p>
+                    <p className="mt-0.5 text-[9px]">SÓLO PUEDE INTERACTUAR CON SUS PROPIAS ORDENES Y TAREAS LIBRES</p>
+                    <div className="mt-2 flex flex-wrap justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowEditCredentials(true)}
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-black text-[9px] px-2.5 py-1 uppercase tracking-widest border border-blue-400 cursor-pointer active:translate-y-0.5 transition-all select-none font-sans"
+                      >
+                        ✏️ Editar mi Usuario y Clave
+                      </button>
+                      {onGlobalLogout && (
+                        <button
+                          type="button"
+                          onClick={onGlobalLogout}
+                          className="bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-450 font-black text-[9px] px-2.5 py-1 uppercase tracking-widest border border-slate-700 hover:border-rose-900/60 cursor-pointer active:translate-y-0.5 transition-all select-none font-sans"
+                        >
+                          🔒 Cerrar mi Sesión
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="bg-slate-900 border-2 border-slate-950 p-4 font-mono text-white shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-4">
+                
+                {/* WARNING INDUSTRIAL ROW HEAD */}
+                <div className="bg-amber-500 text-slate-950 p-2.5 text-[10px] font-black uppercase tracking-wider flex flex-col sm:flex-row items-center justify-between gap-1 border-b-2 border-slate-950">
+                  <span className="flex items-center gap-1.5 font-sans">
+                    <span className="inline-block bg-slate-950 text-amber-500 px-1.5 py-0.5 text-[9px] font-mono font-black">MÓDULO TALLER</span>
+                    <span>PREVENCIÓN DE ERRORES: VERIFIQUE SU IDENTIDAD ANTES DE OPERAR</span>
+                  </span>
+                  <span className="bg-slate-950 text-white px-2 py-0.5 font-mono text-[9px] tracking-widest font-bold">DISPOSITIVO COMPARTIDO</span>
+                </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {trabajadores.map(trab => {
-                    const isActive = trab.id === activeWorkerId;
-                    const activeJobs = ordenes.filter(o => o.trabajadorId === trab.id && o.estado !== 'terminada').length;
-                    return (
-                      <button
-                        key={trab.id}
-                        type="button"
-                        onClick={() => {
-                          if (onChangeActiveWorkerId) {
-                            onChangeActiveWorkerId(trab.id);
-                          }
-                        }}
-                        className={`flex flex-col items-center justify-between p-3.5 rounded-none border-2 transition-all cursor-pointer select-none text-center ${
-                          isActive
-                            ? 'bg-blue-600/10 border-blue-500 scale-[1.01] shadow-[4px_4px_0px_0px_rgba(37,99,235,1)] text-white'
-                            : 'bg-slate-950 hover:bg-slate-800 border-slate-850 text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        <div className="flex flex-col items-center w-full">
-                          {/* Worker avatar tag style */}
-                          <div className={`w-9 h-9 rounded-none flex items-center justify-center font-black text-xs uppercase mb-2 border-2 ${
-                            isActive ? 'bg-blue-600 text-white border-blue-400 animate-pulse' : 'bg-slate-800 text-slate-400 border-slate-700'
-                          }`}>
-                            {trab.nombre.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider">
+                        🛠️ SELECCIONE SU NOMBRE DE LA LISTA:
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 italic">
+                      Toque su tarjeta para activarse como operador activo de la sesión.
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {trabajadores.map(trab => {
+                      const isActive = trab.id === activeWorkerId;
+                      const activeJobs = ordenes.filter(o => o.trabajadorId === trab.id && o.estado !== 'terminada').length;
+                      return (
+                        <button
+                          key={trab.id}
+                          type="button"
+                          onClick={() => {
+                            if (onChangeActiveWorkerId) {
+                              onChangeActiveWorkerId(trab.id);
+                            }
+                          }}
+                          className={`flex flex-col items-center justify-between p-3.5 rounded-none border-2 transition-all cursor-pointer select-none text-center ${
+                            isActive
+                              ? 'bg-blue-600/10 border-blue-500 scale-[1.01] shadow-[4px_4px_0px_0px_rgba(37,99,235,1)] text-white'
+                              : 'bg-slate-950 hover:bg-slate-800 border-slate-850 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center w-full">
+                            {/* Worker avatar tag style */}
+                            <div className={`w-9 h-9 rounded-none flex items-center justify-center font-black text-xs uppercase mb-2 border-2 ${
+                              isActive ? 'bg-blue-600 text-white border-blue-400 animate-pulse' : 'bg-slate-800 text-slate-400 border-slate-700'
+                            }`}>
+                              {trab.nombre.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                            </div>
+
+                            <span className="font-extrabold text-[11px] uppercase tracking-tight block truncate max-w-full leading-tight text-white mb-0.5">
+                              {trab.nombre}
+                            </span>
+                            
+                            <span className={`text-[9px] uppercase font-black px-1.5 py-0.5 border ${
+                              isActive ? 'bg-blue-600/30 text-blue-300 border-blue-500/50' : 'bg-slate-900 text-slate-500 border-slate-800'
+                            }`}>
+                              {trab.especialidad}
+                            </span>
                           </div>
 
-                          <span className="font-extrabold text-[11px] uppercase tracking-tight block truncate max-w-full leading-tight text-white mb-0.5">
-                            {trab.nombre}
-                          </span>
-                          
-                          <span className={`text-[9px] uppercase font-black px-1.5 py-0.5 border ${
-                            isActive ? 'bg-blue-600/30 text-blue-300 border-blue-500/50' : 'bg-slate-900 text-slate-500 border-slate-800'
-                          }`}>
-                            {trab.especialidad}
-                          </span>
-                        </div>
-
-                        <div className="mt-4 pt-2 border-t border-slate-800 w-full flex items-center justify-center gap-1.5 text-[9px]">
-                          <span className={`w-2 h-2 rounded-none shrink-0 ${isActive ? 'bg-emerald-400 animate-ping' : 'bg-slate-700'}`}></span>
-                          <span className="font-bold">
-                            {isActive ? 'SESIÓN ACTIVA' : 'INACTIVO'}
-                          </span>
-                          <span className="text-slate-500 font-normal">
-                             ({activeJobs} trab)
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                          <div className="mt-4 pt-2 border-t border-slate-800 w-full flex items-center justify-center gap-1.5 text-[9px]">
+                            <span className={`w-2 h-2 rounded-none shrink-0 ${isActive ? 'bg-emerald-400 animate-ping' : 'bg-slate-700'}`}></span>
+                            <span className="font-bold">
+                              {isActive ? 'SESIÓN ACTIVA' : 'INACTIVO'}
+                            </span>
+                            <span className="text-slate-500 font-normal">
+                               ({activeJobs} trab)
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-            </div>
+              </div>
+            )}
 
             {/* MAIN WORKER TABS: MY WORK vs OPEN TO TAKE */}
             <div className="bg-slate-900 border-2 border-slate-950 p-4 font-mono text-white shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-3">
@@ -366,10 +430,10 @@ export default function OrdersView({
               >
                 <span className="flex items-center gap-2">
                   <span>👥</span>
-                  <span>Ver Todos los Trabajos</span>
+                  <span>Ver Mis Trabajos y Libres</span>
                 </span>
                 <span className="bg-slate-800 text-slate-300 px-2 py-0.5 text-[10px] font-bold">
-                  {ordenes.length}
+                  {visibleOrdersCount}
                 </span>
               </button>
 
@@ -906,6 +970,18 @@ export default function OrdersView({
         </div>
 
       </div>
+      
+      {showEditCredentials && activeWorker && (
+        <WorkerEditCredentialsModal
+          worker={activeWorker}
+          onClose={() => setShowEditCredentials(false)}
+          onSave={(username, password) => {
+            if (onUpdateWorkerCredentials) {
+              onUpdateWorkerCredentials(activeWorker.id, username, password);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

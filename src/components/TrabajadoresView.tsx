@@ -24,6 +24,8 @@ export default function TrabajadoresView({
   const [nombre, setNombre] = useState('');
   const [especialidad, setEspecialidad] = useState('Mecánica General');
   const [telefono, setTelefono] = useState('');
+  const [usuario, setUsuario] = useState('');
+  const [contrasena, setContrasena] = useState('');
 
   const activeOrdersByWorker = useMemo(() => {
     const map: Record<string, OrdenTrabajo[]> = {};
@@ -39,7 +41,7 @@ export default function TrabajadoresView({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!nombre.trim() || !telefono.trim()) {
-      alert('Por favor complete todos los datos.');
+      alert('Por favor complete todos los datos obligatorios.');
       return;
     }
 
@@ -47,19 +49,25 @@ export default function TrabajadoresView({
       onUpdateTrabajador(editingWorkerId, {
         nombre: nombre.trim(),
         especialidad,
-        telefono: telefono.trim()
+        telefono: telefono.trim(),
+        usuario: usuario.trim(),
+        contrasena: contrasena.trim()
       });
       setEditingWorkerId(null);
     } else {
       onAddTrabajador({
         nombre: nombre.trim(),
         especialidad,
-        telefono: telefono.trim()
+        telefono: telefono.trim(),
+        usuario: usuario.trim(),
+        contrasena: contrasena.trim()
       });
     }
 
     setNombre('');
     setTelefono('');
+    setUsuario('');
+    setContrasena('');
     setEspecialidad('Mecánica General');
     setShowAddForm(false);
   };
@@ -69,6 +77,8 @@ export default function TrabajadoresView({
     setNombre(worker.nombre);
     setEspecialidad(worker.especialidad);
     setTelefono(worker.telefono);
+    setUsuario(worker.usuario || '');
+    setContrasena(worker.contrasena || '');
     setShowAddForm(true);
   };
 
@@ -77,6 +87,8 @@ export default function TrabajadoresView({
       setEditingWorkerId(null);
       setNombre('');
       setTelefono('');
+      setUsuario('');
+      setContrasena('');
       setEspecialidad('Mecánica General');
       setShowAddForm(false);
     } else {
@@ -156,6 +168,36 @@ export default function TrabajadoresView({
                 <option value="Diagnóstico de Escáner">Diagnóstico de Escáner</option>
               </select>
             </div>
+            
+            <div className="pt-2 border-t border-dashed border-slate-300 space-y-3">
+              <span className="text-[10px] uppercase font-black text-blue-600 font-mono block">🔐 Credenciales de Acceso (Usuario de Sistema)</span>
+              <p className="text-[10px] text-slate-500 font-mono leading-relaxed uppercase">
+                Asigne un usuario y contraseña para que este técnico pueda iniciar sesión y gestionar sus tareas asignadas desde su propio dispositivo.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-500 font-mono">Usuario de Acceso</label>
+                  <input
+                    type="text"
+                    value={usuario}
+                    onChange={e => setUsuario(e.target.value.toLowerCase().replace(/\s+/g, ''))}
+                    placeholder="Ej: pedro123"
+                    className="w-full bg-slate-50 border-2 border-slate-900 rounded-none p-2 text-xs focus:bg-white focus:ring-0 focus:outline-none font-mono text-blue-600 font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-500 font-mono">Contraseña de Acceso</label>
+                  <input
+                    type="text"
+                    value={contrasena}
+                    onChange={e => setContrasena(e.target.value)}
+                    placeholder="Clave de seguridad"
+                    className="w-full bg-slate-50 border-2 border-slate-900 rounded-none p-2 text-xs focus:bg-white focus:ring-0 focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
@@ -252,6 +294,17 @@ export default function TrabajadoresView({
                       <Calendar className="w-3.5 h-3.5 text-blue-500" />
                       <span>F. Ingreso: <strong className="text-slate-800">{worker.fechaIngreso}</strong></span>
                     </div>
+                    {worker.usuario && (
+                      <div className="mt-2.5 pt-2 border-t border-dashed border-slate-200 space-y-1 bg-slate-50 p-1.5 rounded border">
+                        <div className="text-[8px] font-black uppercase text-blue-700 tracking-widest flex items-center gap-1">
+                          <span>🔐 Credenciales de Acceso:</span>
+                        </div>
+                        <div className="text-[9px] lowercase flex justify-between gap-2 text-slate-700">
+                          <span>Usr: <strong className="text-slate-900 font-bold bg-slate-200 px-1 py-0.5 rounded font-mono">{worker.usuario}</strong></span>
+                          <span className="normal-case">Clave: <strong className="text-slate-900 font-bold bg-slate-200 px-1 py-0.5 rounded font-mono">{worker.contrasena}</strong></span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

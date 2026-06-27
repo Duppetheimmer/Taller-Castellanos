@@ -118,6 +118,13 @@ export default function AdminLoginModal({ onClose, onSuccess }: AdminLoginModalP
     e.preventDefault();
     const cleanPass = passcode.trim();
     
+    // Check custom PIN first
+    const customAdminPin = localStorage.getItem('castellanos_admin_custom_pin');
+    if (customAdminPin && cleanPass === customAdminPin) {
+      onSuccess();
+      return;
+    }
+    
     try {
       const hash = await hashSHA256(cleanPass);
       // Compare with SHA-256 hash of '159263777'

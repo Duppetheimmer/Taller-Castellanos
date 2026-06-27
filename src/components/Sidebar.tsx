@@ -1,4 +1,5 @@
 import { LayoutDashboard, Users, Car, Wrench, Package, Search, Lock, Unlock, Key, LogOut, Database, Terminal, X, UserX, User, ShoppingBag } from 'lucide-react';
+import { Trabajador } from '../types';
 
 interface SidebarProps {
   currentView: string;
@@ -14,6 +15,9 @@ interface SidebarProps {
   userRole: 'administrador' | 'recepcionista' | 'trabajador';
   onChangeRole: (role: 'administrador' | 'recepcionista' | 'trabajador') => void;
   onGlobalLogout?: () => void;
+  loggedWorkerId?: string | null;
+  trabajadores?: Trabajador[];
+  onTriggerAdminChangeCredentials?: () => void;
 }
 
 export default function Sidebar({
@@ -29,7 +33,10 @@ export default function Sidebar({
   onClose,
   userRole,
   onChangeRole,
-  onGlobalLogout
+  onGlobalLogout,
+  loggedWorkerId = null,
+  trabajadores = [],
+  onTriggerAdminChangeCredentials
 }: SidebarProps) {
   const handleSetView = (view: string) => {
     setView(view);
@@ -79,70 +86,92 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* Role Picker (3 Interfaces) */}
-      <div className="p-3 border-b border-slate-800 bg-slate-950/60 font-sans">
-        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-2.5 block mb-2 font-mono">
-          Selección de Interfaz
-        </span>
-        <div className="grid grid-cols-1 gap-1.5 px-1.5">
-          {/* Admin Role button */}
-          <button
-            onClick={() => {
-              onChangeRole('administrador');
-              if (onClose) onClose();
-            }}
-            className={`flex items-center justify-between p-2 rounded-none border text-left cursor-pointer transition-all ${
-              userRole === 'administrador'
-                ? 'bg-blue-950/45 border-blue-500 text-blue-300'
-                : 'bg-slate-950 border-slate-850 hover:bg-slate-850 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-xs">👑</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider">Administrador</span>
-            </div>
-            <span className={`w-1.5 h-1.5 rounded-none ${userRole === 'administrador' ? 'bg-blue-400' : 'bg-transparent'}`}></span>
-          </button>
-
-          {/* Receptionist Role button */}
-          <button
-            onClick={() => {
-              onChangeRole('recepcionista');
-              if (onClose) onClose();
-            }}
-            className={`flex items-center justify-between p-2 rounded-none border text-left cursor-pointer transition-all ${
-              userRole === 'recepcionista'
-                ? 'bg-emerald-950/45 border-emerald-500 text-emerald-300'
-                : 'bg-slate-950 border-slate-850 hover:bg-slate-850 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-xs">💼</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider">Recepcionista</span>
-            </div>
-            <span className={`w-1.5 h-1.5 rounded-none ${userRole === 'recepcionista' ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
-          </button>
-
-          {/* Worker Role button */}
-          <button
-            onClick={() => {
-              onChangeRole('trabajador');
-              if (onClose) onClose();
-            }}
-            className={`flex items-center justify-between p-2 rounded-none border text-left cursor-pointer transition-all ${
-              userRole === 'trabajador'
-                ? 'bg-amber-950/45 border-amber-500 text-amber-300'
-                : 'bg-slate-950 border-slate-850 hover:bg-slate-850 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-xs">🔧</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider">Mecánico/Técnico</span>
-            </div>
-            <span className={`w-1.5 h-1.5 rounded-none ${userRole === 'trabajador' ? 'bg-amber-400' : 'bg-transparent'}`}></span>
-          </button>
+      {/* Role Picker or Session Indicator */}
+      {loggedWorkerId ? (
+        <div className="p-3 border-b border-slate-800 bg-slate-950/60 font-sans">
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-2.5 block mb-1 font-mono">
+            Operario de Guardia
+          </span>
+          <div className="mx-1.5 my-1 bg-amber-950/20 border border-amber-500/40 p-2.5 rounded-none">
+            <span className="text-[11px] font-black uppercase text-amber-400 block leading-tight flex items-center gap-1.5">
+              <span>🔧</span> {trabajadores.find(t => t.id === loggedWorkerId)?.nombre || 'Mecánico'}
+            </span>
+            <span className="text-[8px] font-mono uppercase text-slate-400 block mt-1 tracking-wider">
+              Acceso: Tareas Asignadas
+            </span>
+            <button
+              onClick={() => {
+                if (onGlobalLogout) {
+                  onGlobalLogout();
+                }
+                if (onClose) onClose();
+              }}
+              className="mt-2.5 w-full bg-slate-900 border border-slate-700 hover:bg-rose-950/40 hover:border-rose-900/60 text-[8px] font-bold text-slate-300 hover:text-rose-400 py-1.5 uppercase tracking-wider rounded-none cursor-pointer text-center block transition-all font-mono"
+            >
+              🔒 Cerrar Sesión Mecánico
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-3 border-b border-slate-800 bg-slate-950/60 font-sans">
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-2.5 block mb-2 font-mono">
+            Selección de Interfaz
+          </span>
+          <div className="grid grid-cols-1 gap-1.5 px-1.5">
+            {/* Admin Role button */}
+            <button
+              onClick={() => {
+                onChangeRole('administrador');
+                if (onClose) onClose();
+              }}
+              className={`flex items-center justify-between p-2 rounded-none border text-left cursor-pointer transition-all ${
+                userRole === 'administrador'
+                  ? 'bg-blue-950/45 border-blue-500 text-blue-300'
+                  : 'bg-slate-950 border-slate-850 hover:bg-slate-850 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xs">👑</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Administrador</span>
+              </div>
+              <span className={`w-1.5 h-1.5 rounded-none ${userRole === 'administrador' ? 'bg-blue-400' : 'bg-transparent'}`}></span>
+            </button>
+
+            {/* Receptionist Role button (Temporarily disabled for security) */}
+            <button
+              type="button"
+              disabled
+              className="flex items-center justify-between p-2 rounded-none border text-left opacity-40 bg-slate-950 border-slate-900 text-slate-500 cursor-not-allowed select-none"
+              title="Interfaz de Recepcionista inhabilitada por seguridad"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xs">💼</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Recepcionista (Desactivada)</span>
+              </div>
+              <span className="text-[8px] font-mono font-black uppercase text-red-500 px-1.5 py-0.5 bg-red-950/40 border border-red-900/45">INACTIVO</span>
+            </button>
+
+            {/* Worker Role button */}
+            <button
+              onClick={() => {
+                onChangeRole('trabajador');
+                if (onClose) onClose();
+              }}
+              className={`flex items-center justify-between p-2 rounded-none border text-left cursor-pointer transition-all ${
+                userRole === 'trabajador'
+                  ? 'bg-amber-950/45 border-amber-500 text-amber-300'
+                  : 'bg-slate-950 border-slate-850 hover:bg-slate-850 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xs">🔧</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Mecánico/Técnico</span>
+              </div>
+              <span className={`w-1.5 h-1.5 rounded-none ${userRole === 'trabajador' ? 'bg-amber-400' : 'bg-transparent'}`}></span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Administrator Status Toggle Box - Only shows or is relevant to Admin interface */}
       {userRole === 'administrador' && (
@@ -184,6 +213,15 @@ export default function Sidebar({
             >
               {isAdmin ? 'Salir de Admin' : 'Validar Pase Admin'}
             </button>
+
+            {isAdmin && onTriggerAdminChangeCredentials && (
+              <button
+                onClick={onTriggerAdminChangeCredentials}
+                className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-mono text-[8px] uppercase tracking-wider transition-all cursor-pointer"
+              >
+                ⚙️ Cambiar Claves de Admin
+              </button>
+            )}
           </div>
         </div>
       )}

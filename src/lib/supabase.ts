@@ -255,7 +255,9 @@ export async function getTrabajadoresDB(): Promise<Trabajador[]> {
     nombre: t.nombre,
     especialidad: t.especialidad,
     telefono: t.telefono || '',
-    fechaIngreso: t.fecha_ingreso
+    fechaIngreso: t.fecha_ingreso,
+    usuario: t.usuario || '',
+    contrasena: t.contrasena || ''
   }));
 }
 
@@ -267,7 +269,9 @@ export async function upsertTrabajadorDB(t: Trabajador): Promise<void> {
       nombre: t.nombre,
       especialidad: t.especialidad,
       telefono: t.telefono,
-      fecha_ingreso: t.fechaIngreso
+      fecha_ingreso: t.fechaIngreso,
+      usuario: t.usuario || null,
+      contrasena: t.contrasena || null
     });
   if (error) throw error;
 }

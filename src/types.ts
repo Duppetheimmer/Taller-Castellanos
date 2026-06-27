@@ -68,6 +68,8 @@ export interface Trabajador {
   especialidad: string;
   telefono: string;
   fechaIngreso: string;
+  usuario?: string;
+  contrasena?: string;
 }
 
 export interface SolicitudRepuesto {

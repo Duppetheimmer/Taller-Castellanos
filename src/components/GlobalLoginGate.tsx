@@ -1,11 +1,13 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Lock, User, Key, Eye, EyeOff, ShieldAlert, ArrowRight, Wrench } from 'lucide-react';
+import { Trabajador } from '../types';
 
 interface GlobalLoginGateProps {
-  onSuccess: () => void;
+  trabajadores: Trabajador[];
+  onSuccess: (role: 'administrador' | 'trabajador', workerId?: string) => void;
 }
 
-export default function GlobalLoginGate({ onSuccess }: GlobalLoginGateProps) {
+export default function GlobalLoginGate({ trabajadores, onSuccess }: GlobalLoginGateProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,38 +22,60 @@ export default function GlobalLoginGate({ onSuccess }: GlobalLoginGateProps) {
     // Sleep briefly to simulate secure checking
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    try {
-      if (username.trim().toLowerCase() !== 'castellanosm') {
-        setIsError(true);
+    const inputUser = username.trim().toLowerCase();
+    const inputPass = password.trim();
+
+    // 1. Check if it's the Admin
+    if (inputUser === 'castellanosm') {
+      const customAdminPass = localStorage.getItem('castellanos_admin_custom_password');
+      if (customAdminPass && inputPass === customAdminPass) {
+        localStorage.setItem('castellanos_global_gate_passed', 'true');
+        onSuccess('administrador');
         setIsLoading(false);
         return;
       }
+      
+      try {
+        // Compute SHA-256 on the client utilizing browser native crypto module
+        const msgBuffer = new TextEncoder().encode(inputPass);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-      // Compute SHA-256 on the client utilizing browser native crypto module
-      const msgBuffer = new TextEncoder().encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-      // Standard hash match for: eltallerdelascosasbienhechas
-      if (hashHex === '1d7a0941b823e2314e744d7a59ad2bd8ad5d0d2e2c39d1547bb1ad9d167e8624') {
-        localStorage.setItem('castellanos_global_gate_passed', 'true');
-        onSuccess();
-      } else {
-        setIsError(true);
+        // Standard hash match for: eltallerdelascosasbienhechas
+        if (hashHex === '1d7a0941b823e2314e744d7a59ad2bd8ad5d0d2e2c39d1547bb1ad9d167e8624') {
+          localStorage.setItem('castellanos_global_gate_passed', 'true');
+          onSuccess('administrador');
+          setIsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Error during secure cryptographic hash lookup:', err);
+        // Fallback simple string check in case of legacy user environment lacking Crypto Subtle API
+        if (inputPass === 'eltallerdelascosasbienhechas') {
+          localStorage.setItem('castellanos_global_gate_passed', 'true');
+          onSuccess('administrador');
+          setIsLoading(false);
+          return;
+        }
       }
-    } catch (err) {
-      console.error('Error during secure cryptographic hash lookup:', err);
-      // Fallback simple string check in case of legacy user environment lacking Crypto Subtle API
-      if (username.trim().toLowerCase() === 'castellanosm' && password === 'eltallerdelascosasbienhechas') {
-        localStorage.setItem('castellanos_global_gate_passed', 'true');
-        onSuccess();
-      } else {
-        setIsError(true);
-      }
-    } finally {
-      setIsLoading(false);
     }
+
+    // 2. Check if it's one of the registered technicians / workers
+    const matchedWorker = trabajadores.find(
+      t => t.usuario && t.usuario.trim().toLowerCase() === inputUser
+    );
+
+    if (matchedWorker && matchedWorker.contrasena === inputPass) {
+      localStorage.setItem('castellanos_global_gate_passed', 'true');
+      onSuccess('trabajador', matchedWorker.id);
+      setIsLoading(false);
+      return;
+    }
+
+    // If neither matched
+    setIsError(true);
+    setIsLoading(false);
   }
 
   return (
@@ -68,14 +92,21 @@ export default function GlobalLoginGate({ onSuccess }: GlobalLoginGateProps) {
               Castellanos Motors
             </h1>
             <span className="inline-block bg-blue-950 text-blue-400 text-[9px] font-mono font-bold tracking-widest px-2.5 py-1 border border-blue-900 rounded-none mt-1">
-              ACCESO RESTRINGIDO • SISTEMA TALLER
+              SISTEMA INTEGRAL DE CONTROL
             </span>
           </div>
         </div>
 
+        {/* WELCOME SLOGAN PANEL */}
+        <div className="bg-blue-600/15 border-2 border-blue-500/50 p-4 text-center mb-6 shadow-[4px_4px_0px_0px_rgba(37,99,235,0.15)] rounded-none">
+          <p className="font-sans font-black text-[11px] text-blue-300 uppercase tracking-widest leading-relaxed">
+            “Bienvenido a Castellanos Motors, el taller de las cosas bien hechas.”
+          </p>
+        </div>
+
         {/* Informative text */}
-        <p className="text-xs font-mono text-slate-400 text-center leading-relaxed bg-slate-900/40 p-3 border border-slate-900 mb-6">
-          Por seguridad, ingrese sus credenciales de taller autorizadas para desbloquear el sistema de control.
+        <p className="text-xs font-mono text-slate-450 text-center leading-relaxed bg-slate-900/40 p-3 border border-slate-900 mb-6">
+          ACCESO RESTRINGIDO • Ingrese sus credenciales de taller autorizadas para desbloquear el sistema de control.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

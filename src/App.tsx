@@ -24,6 +24,8 @@ import OrderFormModal from './components/OrderFormModal';
 
 // Admin & Supabase Service imports
 import AdminLoginModal from './components/AdminLoginModal';
+import AdminEditCredentialsModal from './components/AdminEditCredentialsModal';
+import WorkerLoginModal from './components/WorkerLoginModal';
 import SupabaseSqlModal from './components/SupabaseSqlModal';
 import GlobalLoginGate from './components/GlobalLoginGate';
 import {
@@ -111,10 +113,10 @@ export default function App() {
   const [userRole, setUserRole] = useState<'administrador' | 'recepcionista' | 'trabajador'>(() => {
     const role = localStorage.getItem('castellanos_userRole');
     const wasAdmin = localStorage.getItem('castellanos_isAdmin') === 'true';
-    if (role === 'administrador' && !wasAdmin) {
-      return 'recepcionista';
+    if (role === 'recepcionista' || (role === 'administrador' && !wasAdmin)) {
+      return 'trabajador';
     }
-    return (role as any) || 'recepcionista';
+    return (role as any) || 'trabajador';
   });
   const [trabajadores, setTrabajadores] = useState<Trabajador[]>([]);
   const [solicitudes, setSolicitudes] = useState<SolicitudRepuesto[]>([]);
@@ -123,14 +125,22 @@ export default function App() {
   });
 
   // --- GLOBAL SECURED GATE CONTEXT ---
-  const [isGatePassed, setIsGatePassed] = useState<boolean>(() => {
-    return localStorage.getItem('castellanos_global_gate_passed') === 'true';
+  const [loggedWorkerId, setLoggedWorkerId] = useState<string | null>(() => {
+    return localStorage.getItem('castellanos_logged_worker_id') || null;
   });
 
-  const handleGlobalLogout = () => {
-    if (confirm('¿Confirma que desea bloquear esta terminal corporativa y cerrar la sesión de Castellanos Motors?')) {
+  const [isGatePassed, setIsGatePassed] = useState<boolean>(false);
+
+  const handleGlobalLogout = (skipConfirm = false) => {
+    if (skipConfirm || confirm('¿Confirma que desea bloquear esta terminal corporativa y cerrar la sesión de Castellanos Motors?')) {
       localStorage.removeItem('castellanos_global_gate_passed');
+      localStorage.removeItem('castellanos_logged_worker_id');
+      localStorage.removeItem('castellanos_isAdmin');
+      localStorage.removeItem('castellanos_userRole');
       setIsGatePassed(false);
+      setLoggedWorkerId(null);
+      setIsAdmin(false);
+      setUserRole('trabajador');
     }
   };
 
@@ -139,7 +149,9 @@ export default function App() {
     return localStorage.getItem('castellanos_isAdmin') === 'true';
   });
   const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+  const [showWorkerLoginModal, setShowWorkerLoginModal] = useState(false);
   const [showSqlModal, setShowSqlModal] = useState(false);
+  const [showAdminEditCredentialsModal, setShowAdminEditCredentialsModal] = useState(false);
 
   // --- AUDIO NOTIFICATION PREFERENCE ---
   const [audioNotificationEnabled, setAudioNotificationEnabled] = useState<boolean>(() => {
@@ -383,6 +395,8 @@ export default function App() {
     localStorage.setItem('castellanos_isAdmin', 'true');
     setUserRole('administrador');
     localStorage.setItem('castellanos_userRole', 'administrador');
+    setLoggedWorkerId(null);
+    localStorage.removeItem('castellanos_logged_worker_id');
     setView('dashboard');
     setShowAdminLoginModal(false);
     alert('Acceso de Administrador concedido. Bienvenido.');
@@ -391,10 +405,14 @@ export default function App() {
   const handleAdminLogout = () => {
     setIsAdmin(false);
     localStorage.setItem('castellanos_isAdmin', 'false');
-    setUserRole('recepcionista');
-    localStorage.setItem('castellanos_userRole', 'recepcionista');
-    setView('dashboard');
-    alert('Has cerrado sesión como Administrador. Se ha activado la interfaz de Recepcionista.');
+    setUserRole('trabajador');
+    localStorage.setItem('castellanos_userRole', 'trabajador');
+    setLoggedWorkerId(null);
+    localStorage.removeItem('castellanos_logged_worker_id');
+    setIsGatePassed(false);
+    localStorage.removeItem('castellanos_global_gate_passed');
+    setView('ordenes');
+    alert('Has cerrado sesión de Administrador. Se ha bloqueado la terminal para proteger los datos.');
   };
 
   // Helper ID generator
@@ -879,22 +897,32 @@ export default function App() {
       if (isAdmin) {
         setUserRole('administrador');
         localStorage.setItem('castellanos_userRole', 'administrador');
+        setLoggedWorkerId(null);
+        localStorage.removeItem('castellanos_logged_worker_id');
         setView('dashboard');
       } else {
         setShowAdminLoginModal(true);
       }
+    } else if (role === 'trabajador') {
+      if (loggedWorkerId) {
+        setIsAdmin(false);
+        localStorage.setItem('castellanos_isAdmin', 'false');
+        setUserRole('trabajador');
+        localStorage.setItem('castellanos_userRole', 'trabajador');
+        setView('ordenes');
+      } else {
+        setShowWorkerLoginModal(true);
+      }
     } else {
-      // Transitioning away from administrator turns off administrator powers
+      // Transitioning away from administrator/worker
       setIsAdmin(false);
       localStorage.setItem('castellanos_isAdmin', 'false');
+      setLoggedWorkerId(null);
+      localStorage.removeItem('castellanos_logged_worker_id');
       
       setUserRole(role);
       localStorage.setItem('castellanos_userRole', role);
-      if (role === 'trabajador') {
-        setView('ordenes');
-      } else {
-        setView('dashboard');
-      }
+      setView('dashboard');
     }
   };
 
@@ -947,7 +975,9 @@ export default function App() {
           ...t,
           nombre: data.nombre,
           especialidad: data.especialidad,
-          telefono: data.telefono
+          telefono: data.telefono,
+          usuario: data.usuario,
+          contrasena: data.contrasena
         };
         return targetWorker;
       }
@@ -1075,7 +1105,35 @@ export default function App() {
 
 
   if (!isGatePassed) {
-    return <GlobalLoginGate onSuccess={() => setIsGatePassed(true)} />;
+    return (
+      <GlobalLoginGate
+        trabajadores={trabajadores}
+        onSuccess={(role, workerId) => {
+          setIsGatePassed(true);
+          if (role === 'trabajador') {
+            setIsAdmin(false);
+            localStorage.setItem('castellanos_isAdmin', 'false');
+            setUserRole('trabajador');
+            localStorage.setItem('castellanos_userRole', 'trabajador');
+            if (workerId) {
+              setLoggedWorkerId(workerId);
+              localStorage.setItem('castellanos_logged_worker_id', workerId);
+              setActiveWorkerId(workerId);
+              localStorage.setItem('castellanos_activeWorkerId', workerId);
+            }
+            setView('ordenes');
+          } else {
+            setIsAdmin(true);
+            localStorage.setItem('castellanos_isAdmin', 'true');
+            setUserRole('administrador');
+            localStorage.setItem('castellanos_userRole', 'administrador');
+            setLoggedWorkerId(null);
+            localStorage.removeItem('castellanos_logged_worker_id');
+            setView('dashboard');
+          }
+        }}
+      />
+    );
   }
 
   return (
@@ -1104,6 +1162,9 @@ export default function App() {
         userRole={userRole}
         onChangeRole={handleChangeRole}
         onGlobalLogout={handleGlobalLogout}
+        loggedWorkerId={loggedWorkerId}
+        trabajadores={trabajadores}
+        onTriggerAdminChangeCredentials={() => setShowAdminEditCredentialsModal(true)}
       />
 
       {/* Main body content pane wrapper */}
@@ -1160,23 +1221,29 @@ export default function App() {
           {userRole === 'trabajador' && (
             <div className="flex items-center gap-2">
               <span className="text-slate-400 uppercase font-bold text-[9px]">Operando como:</span>
-              <select
-                value={activeWorkerId}
-                onChange={(e) => {
-                  setActiveWorkerId(e.target.value);
-                  localStorage.setItem('castellanos_activeWorkerId', e.target.value);
-                }}
-                className="bg-slate-950 text-white border border-slate-700 hover:border-blue-500 rounded-none px-2 py-1 text-[9px] focus:outline-none transition-all cursor-pointer font-bold uppercase"
-              >
-                {trabajadores.map(trab => (
-                  <option key={trab.id} value={trab.id}>
-                    {trab.nombre} ({trab.especialidad})
-                  </option>
-                ))}
-                {trabajadores.length === 0 && (
-                  <option value="TRA-001">Mecánico de Planta</option>
-                )}
-              </select>
+              {loggedWorkerId ? (
+                <span className="bg-amber-950 text-amber-400 border border-amber-800/60 px-2.5 py-1 text-[9px] font-bold uppercase select-none">
+                  {trabajadores.find(t => t.id === loggedWorkerId)?.nombre || 'Mecánico'}
+                </span>
+              ) : (
+                <select
+                  value={activeWorkerId}
+                  onChange={(e) => {
+                    setActiveWorkerId(e.target.value);
+                    localStorage.setItem('castellanos_activeWorkerId', e.target.value);
+                  }}
+                  className="bg-slate-950 text-white border border-slate-700 hover:border-blue-500 rounded-none px-2 py-1 text-[9px] focus:outline-none transition-all cursor-pointer font-bold uppercase"
+                >
+                  {trabajadores.map(trab => (
+                    <option key={trab.id} value={trab.id}>
+                      {trab.nombre} ({trab.especialidad})
+                    </option>
+                  ))}
+                  {trabajadores.length === 0 && (
+                    <option value="TRA-001">Mecánico de Planta</option>
+                  )}
+                </select>
+              )}
             </div>
           )}
 
@@ -1310,6 +1377,7 @@ export default function App() {
               trabajadores={trabajadores}
               solicitudes={solicitudes}
               activeWorkerId={activeWorkerId}
+              loggedWorkerId={loggedWorkerId}
               onAcceptOrder={(orderId) => {
                 const orderToAccept = ordenes.find(o => o.id === orderId);
                 if (orderToAccept?.estado === 'terminada') {
@@ -1351,6 +1419,19 @@ export default function App() {
                 setActiveWorkerId(id);
                 localStorage.setItem('castellanos_activeWorkerId', id);
               }}
+              onUpdateWorkerCredentials={(id, username, password) => {
+                const targetW = trabajadores.find(t => t.id === id);
+                if (targetW) {
+                  handleUpdateTrabajador(id, {
+                    nombre: targetW.nombre,
+                    especialidad: targetW.especialidad,
+                    telefono: targetW.telefono,
+                    usuario: username,
+                    contrasena: password
+                  });
+                }
+              }}
+              onGlobalLogout={() => handleGlobalLogout(false)}
             />
           )}
 
@@ -1455,6 +1536,37 @@ export default function App() {
       {showSqlModal && (
         <SupabaseSqlModal
           onClose={() => setShowSqlModal(false)}
+        />
+      )}
+
+      {/* 9. Worker/Technician login modal */}
+      {showWorkerLoginModal && (
+        <WorkerLoginModal
+          trabajadores={trabajadores}
+          onClose={() => setShowWorkerLoginModal(false)}
+          onSuccess={(workerId) => {
+            setIsAdmin(false);
+            localStorage.setItem('castellanos_isAdmin', 'false');
+            setUserRole('trabajador');
+            localStorage.setItem('castellanos_userRole', 'trabajador');
+            setLoggedWorkerId(workerId);
+            localStorage.setItem('castellanos_logged_worker_id', workerId);
+            setActiveWorkerId(workerId);
+            localStorage.setItem('castellanos_activeWorkerId', workerId);
+            setView('ordenes');
+            setShowWorkerLoginModal(false);
+          }}
+        />
+      )}
+
+      {/* 10. Admin Edit Credentials Modal */}
+      {showAdminEditCredentialsModal && (
+        <AdminEditCredentialsModal
+          onClose={() => setShowAdminEditCredentialsModal(false)}
+          onSave={(newPassword, newPin) => {
+            localStorage.setItem('castellanos_admin_custom_password', newPassword);
+            localStorage.setItem('castellanos_admin_custom_pin', newPin);
+          }}
         />
       )}
 
