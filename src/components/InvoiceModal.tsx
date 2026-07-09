@@ -8,9 +8,10 @@ interface InvoiceModalProps {
   vehicles: Vehiculo[];
   onClose: () => void;
   onUpdateOrden?: (updated: OrdenTrabajo) => void;
+  userRole?: 'administrador' | 'recepcionista' | 'trabajador';
 }
 
-export default function InvoiceModal({ orden, clients, vehicles, onClose, onUpdateOrden }: InvoiceModalProps) {
+export default function InvoiceModal({ orden, clients, vehicles, onClose, onUpdateOrden, userRole = 'recepcionista' }: InvoiceModalProps) {
   const cliente = clients.find(c => c.id === orden.clienteId);
   const vehiculo = vehicles.find(v => v.id === orden.autoId);
 
@@ -278,6 +279,71 @@ export default function InvoiceModal({ orden, clients, vehicles, onClose, onUpda
                 {orden.estado === 'terminada' ? 'Listo' : orden.estado === 'en_proceso' ? 'Labores' : 'Ingreso'}
               </span>
               <p className="text-[10px] text-slate-500 mt-2">{orden.fecha.split('-').reverse().join('/')}</p>
+            </div>
+          </div>
+
+          {/* CONTROL DE PAGOS (CLIENTE & COMISION TRABAJADOR) */}
+          <div className="p-4 bg-white border-2 border-slate-900 rounded-none space-y-4 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)]">
+            <h4 className="text-[10px] font-extrabold text-slate-400 border-b border-slate-100 pb-1.5 mb-1 font-mono">ESTADO DE PAGOS DE LA ORDEN</h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* 1. Pago de Servicio (Cliente) */}
+              <div className="space-y-1.5">
+                <span className="text-[9px] uppercase font-bold text-slate-500 block">💵 PAGO CLIENTE:</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`px-2 py-0.5 text-[9px] font-black border-2 uppercase ${
+                    orden.servicioPagado 
+                      ? 'bg-emerald-50 border-emerald-600 text-emerald-800' 
+                      : 'bg-rose-50 border-rose-500 text-rose-700'
+                  }`}>
+                    {orden.servicioPagado ? '🟢 PAGADO' : '🔴 PENDIENTE'}
+                  </span>
+                  
+                  {userRole !== 'trabajador' && onUpdateOrden && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateOrden({
+                          ...orden,
+                          servicioPagado: !orden.servicioPagado
+                        });
+                      }}
+                      className="px-1.5 py-0.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[8.5px] uppercase border border-slate-950 cursor-pointer transition-colors"
+                    >
+                      {orden.servicioPagado ? 'PENDIENTE' : 'PAGAR'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Pago de Comisión (Técnico) */}
+              <div className="space-y-1.5 border-t sm:border-t-0 sm:border-l border-slate-100 pt-3 sm:pt-0 sm:pl-4">
+                <span className="text-[9px] uppercase font-bold text-slate-500 block">⚙️ COMISIÓN TÉCNICA (MECÁNICO):</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`px-2 py-0.5 text-[9px] font-black border-2 uppercase ${
+                    orden.comisionPagada 
+                      ? 'bg-emerald-50 border-emerald-600 text-emerald-800' 
+                      : 'bg-amber-50 border-amber-500 text-amber-800'
+                  }`}>
+                    {orden.comisionPagada ? '🟢 PAGADA' : '🟡 PENDIENTE'}
+                  </span>
+
+                  {userRole !== 'trabajador' && onUpdateOrden && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateOrden({
+                          ...orden,
+                          comisionPagada: !orden.comisionPagada
+                        });
+                      }}
+                      className="px-1.5 py-0.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[8.5px] uppercase border border-slate-950 cursor-pointer transition-colors"
+                    >
+                      {orden.comisionPagada ? 'PENDIENTE' : 'PAGAR'}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -209,7 +209,10 @@ export async function getOrdenesDB(): Promise<OrdenTrabajo[]> {
     estado: o.estado,
     creadoEn: o.creado_en,
     trabajadorId: o.trabajador_id || undefined,
-    diagnostico: o.diagnostico || ''
+    diagnostico: o.diagnostico || '',
+    comisionPagada: o.comision_pagada !== undefined && o.comision_pagada !== null ? Boolean(o.comision_pagada) : false,
+    servicioPagado: o.servicio_pagado !== undefined && o.servicio_pagado !== null ? Boolean(o.servicio_pagado) : false,
+    comisionPorcentaje: o.comision_porcentaje !== undefined && o.comision_porcentaje !== null ? Number(o.comision_porcentaje) : undefined
   }));
 }
 
@@ -229,9 +232,32 @@ export async function upsertOrdenDB(o: OrdenTrabajo): Promise<void> {
       estado: o.estado,
       creado_en: o.creadoEn,
       trabajador_id: o.trabajadorId || null,
-      diagnostico: o.diagnostico || null
+      diagnostico: o.diagnostico || null,
+      comision_pagada: o.comisionPagada !== undefined ? o.comisionPagada : false,
+      servicio_pagado: o.servicioPagado !== undefined ? o.servicioPagado : false,
+      comision_porcentaje: o.comisionPorcentaje !== undefined ? o.comisionPorcentaje : null
     });
-  if (error) throw error;
+  if (error) {
+    console.warn('Falla al guardar comision_pagada, servicio_pagado y/o comision_porcentaje en base de datos remota, intentando sin estas columnas:', error);
+    const { error: retryError } = await supabase
+      .from('ordenes')
+      .upsert({
+        id: o.id,
+        cliente_id: o.clienteId,
+        auto_id: o.autoId,
+        fecha: o.fecha,
+        descripcion: o.descripcion,
+        repuestos: o.repuestos,
+        observaciones: o.observaciones,
+        labor_cost: o.laborCost,
+        km_ingreso: o.kmIngreso,
+        estado: o.estado,
+        creado_en: o.creadoEn,
+        trabajador_id: o.trabajadorId || null,
+        diagnostico: o.diagnostico || null
+      });
+    if (retryError) throw retryError;
+  }
 }
 
 export async function deleteOrdenDB(id: string): Promise<void> {
@@ -257,11 +283,15 @@ export async function getTrabajadoresDB(): Promise<Trabajador[]> {
     telefono: t.telefono || '',
     fechaIngreso: t.fecha_ingreso,
     usuario: t.usuario || '',
-    contrasena: t.contrasena || ''
+    contrasena: t.contrasena || '',
+    comisionPercent: t.comision_porcentaje !== undefined && t.comision_porcentaje !== null 
+      ? Number(t.comision_porcentaje) 
+      : (t.comision_percent !== undefined && t.comision_percent !== null ? Number(t.comision_percent) : 40)
   }));
 }
 
 export async function upsertTrabajadorDB(t: Trabajador): Promise<void> {
+  const percentVal = t.comisionPercent !== undefined ? t.comisionPercent : 40;
   const { error } = await supabase
     .from('trabajadores')
     .upsert({
@@ -271,9 +301,56 @@ export async function upsertTrabajadorDB(t: Trabajador): Promise<void> {
       telefono: t.telefono,
       fecha_ingreso: t.fechaIngreso,
       usuario: t.usuario || null,
-      contrasena: t.contrasena || null
+      contrasena: t.contrasena || null,
+      comision_porcentaje: percentVal,
+      comision_percent: percentVal
     });
-  if (error) throw error;
+  if (error) {
+    console.warn('Falla al guardar comision_porcentaje y/o comision_percent en la base de datos remota, intentando individualmente:', error);
+    // Try with comision_porcentaje only
+    const { error: err2 } = await supabase
+      .from('trabajadores')
+      .upsert({
+        id: t.id,
+        nombre: t.nombre,
+        especialidad: t.especialidad,
+        telefono: t.telefono,
+        fecha_ingreso: t.fechaIngreso,
+        usuario: t.usuario || null,
+        contrasena: t.contrasena || null,
+        comision_porcentaje: percentVal
+      });
+    if (err2) {
+      // Try with comision_percent only
+      const { error: err3 } = await supabase
+        .from('trabajadores')
+        .upsert({
+          id: t.id,
+          nombre: t.nombre,
+          especialidad: t.especialidad,
+          telefono: t.telefono,
+          fecha_ingreso: t.fechaIngreso,
+          usuario: t.usuario || null,
+          contrasena: t.contrasena || null,
+          comision_percent: percentVal
+        });
+      if (err3) {
+        // Try without commission columns
+        const { error: err4 } = await supabase
+          .from('trabajadores')
+          .upsert({
+            id: t.id,
+            nombre: t.nombre,
+            especialidad: t.especialidad,
+            telefono: t.telefono,
+            fecha_ingreso: t.fechaIngreso,
+            usuario: t.usuario || null,
+            contrasena: t.contrasena || null
+          });
+        if (err4) throw err4;
+      }
+    }
+  }
 }
 
 export async function deleteTrabajadorDB(id: string): Promise<void> {

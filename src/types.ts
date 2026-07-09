@@ -60,6 +60,9 @@ export interface OrdenTrabajo {
   creadoEn: string;
   trabajadorId?: string;
   diagnostico?: string;
+  comisionPagada?: boolean;
+  servicioPagado?: boolean;
+  comisionPorcentaje?: number;
 }
 
 export interface Trabajador {
@@ -70,6 +73,7 @@ export interface Trabajador {
   fechaIngreso: string;
   usuario?: string;
   contrasena?: string;
+  comisionPercent?: number; // Porcentaje de comisión, ej: 50%
 }
 
 export interface SolicitudRepuesto {

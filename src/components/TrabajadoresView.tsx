@@ -26,6 +26,7 @@ export default function TrabajadoresView({
   const [telefono, setTelefono] = useState('');
   const [usuario, setUsuario] = useState('');
   const [contrasena, setContrasena] = useState('');
+  const [comisionPercent, setComisionPercent] = useState<number>(50);
 
   const activeOrdersByWorker = useMemo(() => {
     const map: Record<string, OrdenTrabajo[]> = {};
@@ -51,7 +52,8 @@ export default function TrabajadoresView({
         especialidad,
         telefono: telefono.trim(),
         usuario: usuario.trim(),
-        contrasena: contrasena.trim()
+        contrasena: contrasena.trim(),
+        comisionPercent: Number(comisionPercent)
       });
       setEditingWorkerId(null);
     } else {
@@ -60,7 +62,8 @@ export default function TrabajadoresView({
         especialidad,
         telefono: telefono.trim(),
         usuario: usuario.trim(),
-        contrasena: contrasena.trim()
+        contrasena: contrasena.trim(),
+        comisionPercent: Number(comisionPercent)
       });
     }
 
@@ -69,6 +72,7 @@ export default function TrabajadoresView({
     setUsuario('');
     setContrasena('');
     setEspecialidad('Mecánica General');
+    setComisionPercent(50);
     setShowAddForm(false);
   };
 
@@ -79,6 +83,7 @@ export default function TrabajadoresView({
     setTelefono(worker.telefono);
     setUsuario(worker.usuario || '');
     setContrasena(worker.contrasena || '');
+    setComisionPercent(worker.comisionPercent !== undefined ? worker.comisionPercent : 50);
     setShowAddForm(true);
   };
 
@@ -90,6 +95,7 @@ export default function TrabajadoresView({
       setUsuario('');
       setContrasena('');
       setEspecialidad('Mecánica General');
+      setComisionPercent(50);
       setShowAddForm(false);
     } else {
       setShowAddForm(true);
@@ -168,6 +174,20 @@ export default function TrabajadoresView({
                 <option value="Diagnóstico de Escáner">Diagnóstico de Escáner</option>
               </select>
             </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-bold text-slate-500 font-mono">Porcentaje de Comisión (%) *</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                required
+                value={comisionPercent}
+                onChange={e => setComisionPercent(Number(e.target.value))}
+                placeholder="Ej: 50"
+                className="w-full bg-slate-50 border-2 border-slate-900 rounded-none p-2 text-xs focus:bg-white focus:ring-0 focus:outline-none font-mono text-blue-600 font-bold"
+              />
+            </div>
             
             <div className="pt-2 border-t border-dashed border-slate-300 space-y-3">
               <span className="text-[10px] uppercase font-black text-blue-600 font-mono block">🔐 Credenciales de Acceso (Usuario de Sistema)</span>
@@ -206,6 +226,7 @@ export default function TrabajadoresView({
                   setNombre('');
                   setTelefono('');
                   setEspecialidad('Mecánica General');
+                  setComisionPercent(50);
                   setShowAddForm(false);
                 }}
                 className="px-3 py-1.5 border-2 border-slate-950 hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase transition-all"
@@ -309,19 +330,44 @@ export default function TrabajadoresView({
                 </div>
 
                 {/* Labor production financial dashboard metrics */}
-                <div className="p-4 bg-emerald-50/50 border-t border-b border-dashed border-emerald-900/10 font-mono text-[10px] flex items-center justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <span className="text-[9px] text-emerald-800 font-extrabold uppercase block tracking-wider">Mano de Obra Producida</span>
-                    <span className="text-[8px] text-slate-500 block">Acumulado de {completedOnes.length} trabajos completados</span>
+                <div className="p-4 bg-slate-50/50 border-t border-b border-dashed border-slate-200 font-mono text-[10px] space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase block tracking-wider">Mano de Obra Producida</span>
+                      <span className="text-[8px] text-slate-400 block">Acumulado ({completedOnes.length} trabajos)</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-700 font-bold text-xs block">
+                        Bs. {totalVES.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-[8px] text-slate-450 block italic">
+                        ${totalUSD.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-emerald-900 font-black text-xs block">
-                      Bs. {totalVES.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-[8px] text-emerald-700 font-bold block italic">
-                      Ref: ${totalUSD.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                    </span>
-                  </div>
+
+                  {/* Technician Commission */}
+                  {(() => {
+                    const rate = worker.comisionPercent !== undefined ? worker.comisionPercent : 50;
+                    const commUSD = totalUSD * (rate / 100);
+                    const commVES = totalVES * (rate / 100);
+                    return (
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-slate-200">
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] text-emerald-800 font-extrabold uppercase block tracking-wider">Comisión Técnica ({rate}%)</span>
+                          <span className="text-[8px] text-emerald-600 font-bold block">Dinero que le pertenece</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-emerald-900 font-black text-sm block">
+                            Bs. {commVES.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[9px] text-emerald-700 font-extrabold block italic">
+                            ${commUSD.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Workloads status */}

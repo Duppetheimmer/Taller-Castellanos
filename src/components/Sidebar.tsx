@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Car, Wrench, Package, Search, Lock, Unlock, Key, LogOut, Database, Terminal, X, UserX, User, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, Users, Car, Wrench, Package, Search, Lock, Unlock, Key, LogOut, Database, Terminal, X, UserX, User, ShoppingBag, DollarSign } from 'lucide-react';
 import { Trabajador } from '../types';
 
 interface SidebarProps {
@@ -355,17 +355,33 @@ export default function Sidebar({
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-3.5 block mb-1.5 font-mono">
             Taller
           </span>
-          <button
-            onClick={() => handleSetView('ordenes')}
-            className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all ${
-              currentView === 'ordenes'
-                ? 'bg-slate-800 text-blue-400 border-l-4 border-blue-500 px-2'
-                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-            }`}
-          >
-            <Wrench className="w-3.5 h-3.5 text-blue-500" />
-            {userRole === 'trabajador' ? 'Mis Tareas Asignadas' : 'Órdenes de Trabajo'}
-          </button>
+          <div className="space-y-0.5">
+            <button
+              onClick={() => handleSetView('ordenes')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all ${
+                currentView === 'ordenes'
+                  ? 'bg-slate-800 text-blue-400 border-l-4 border-blue-500 px-2'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <Wrench className="w-3.5 h-3.5 text-blue-500" />
+              {userRole === 'trabajador' ? 'Mis Tareas Asignadas' : 'Órdenes de Trabajo'}
+            </button>
+
+            {userRole === 'trabajador' && (
+              <button
+                onClick={() => handleSetView('comisiones')}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all ${
+                  currentView === 'comisiones'
+                    ? 'bg-slate-800 text-blue-400 border-l-4 border-blue-500 px-2'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                Mis Comisiones
+              </button>
+            )}
+          </div>
         </div>
 
       </nav>

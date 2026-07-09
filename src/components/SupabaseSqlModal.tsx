@@ -79,6 +79,8 @@ CREATE TABLE IF NOT EXISTS ordenes (
     creado_en TEXT NOT NULL,
     trabajador_id TEXT,
     diagnostico TEXT,
+    comision_pagada BOOLEAN NOT NULL DEFAULT FALSE,
+    servicio_pagado BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -125,6 +127,8 @@ CREATE TABLE IF NOT EXISTS ventas_individuales (
 -- MIGRACIÓN IMPORTANTE: Asegurar que las columnas existan en la tabla ordenes (por si las tablas ya estaban creadas de antes)
 ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS trabajador_id TEXT;
 ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS diagnostico TEXT;
+ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS comision_pagada BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS servicio_pagado BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- MIGRACIÓN IMPORTANTE: Asegurar que las columnas existan en la tabla trabajadores (para login de mecánicos)
 ALTER TABLE trabajadores ADD COLUMN IF NOT EXISTS usuario TEXT;

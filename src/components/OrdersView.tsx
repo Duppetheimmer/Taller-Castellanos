@@ -542,6 +542,27 @@ export default function OrdersView({
                             </strong>
                           )}
                         </div>
+
+                        {/* Payment Status Badges */}
+                        <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase font-black">
+                          <span className={`px-2 py-0.5 border uppercase ${
+                            o.servicioPagado 
+                              ? 'bg-emerald-50 border-emerald-600 text-emerald-800' 
+                              : 'bg-rose-50 border-rose-300 text-rose-700'
+                          }`}>
+                            {o.servicioPagado ? '💵 Servicio Pagado' : '💵 Servicio Omitido/Pendiente'}
+                          </span>
+                          
+                          {o.trabajadorId && (
+                            <span className={`px-2 py-0.5 border uppercase ${
+                              o.comisionPagada 
+                                ? 'bg-emerald-50 border-emerald-600 text-emerald-800' 
+                                : 'bg-amber-50 border-amber-300 text-amber-800'
+                            }`}>
+                              {o.comisionPagada ? '⚙️ Comis. Pagada' : '⚙️ Comis. Pendiente'}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="text-[10px] font-mono text-slate-500 uppercase flex items-center gap-1.5">

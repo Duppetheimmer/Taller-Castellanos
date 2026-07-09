@@ -18,6 +18,7 @@ import VehiclesView from './components/VehiclesView';
 import ClientsView from './components/ClientsView';
 import InventoryView from './components/InventoryView';
 import OrdersView from './components/OrdersView';
+import WorkerCommissionsView from './components/WorkerCommissionsView';
 import InvoiceModal from './components/InvoiceModal';
 import { ClienteModal, VehiculoModal, RepuestoModal, ReabastecerModal } from './components/FormModals';
 import OrderFormModal from './components/OrderFormModal';
@@ -977,7 +978,8 @@ export default function App() {
           especialidad: data.especialidad,
           telefono: data.telefono,
           usuario: data.usuario,
-          contrasena: data.contrasena
+          contrasena: data.contrasena,
+          comisionPercent: data.comisionPercent
         };
         return targetWorker;
       }
@@ -1435,6 +1437,15 @@ export default function App() {
             />
           )}
 
+          {currentView === 'comisiones' && userRole === 'trabajador' && loggedWorkerId && (
+            <WorkerCommissionsView
+              loggedWorkerId={loggedWorkerId}
+              trabajadores={trabajadores}
+              ordenes={ordenes}
+              vehiculos={vehiculos}
+            />
+          )}
+
           {currentView === 'ventas' && userRole !== 'trabajador' && (
             <VentasView
               ventas={ventas}
@@ -1471,6 +1482,7 @@ export default function App() {
           vehicles={vehiculos}
           onClose={() => setActiveInvoice(null)}
           onUpdateOrden={handleUpdateOrden}
+          userRole={userRole}
         />
       )}
 
